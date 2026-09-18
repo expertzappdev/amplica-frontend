@@ -1,7 +1,7 @@
-export const API_BASE_URL = 'http://10.0.0.150:5062/api';
-export const ASSETS_BASE_URL = 'http://10.0.0.150:5062';
-// export const API_BASE_URL = 'https://amplica.in/api';
-// export const ASSETS_BASE_URL = 'https://amplica.in';
+// export const API_BASE_URL = 'http://10.0.0.150:5062/api';
+// export const ASSETS_BASE_URL = 'http://10.0.0.150:5062';
+export const API_BASE_URL = 'https://amplica-backend.onrender.com/api';
+export const ASSETS_BASE_URL = 'https://amplica-backend.onrender.com';
 
 // Authentication Endpoints
 export const AUTH_ENDPOINTS = {
