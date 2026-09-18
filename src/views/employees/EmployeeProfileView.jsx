@@ -28,7 +28,7 @@ import { ASSETS_BASE_URL } from '../../services/apiConstants';
 import { format, parseISO, isValid, differenceInYears } from 'date-fns';
 import { gridSpacing } from '../../store/constant';
 import { useTheme } from '@mui/material/styles';
-import CompanyChangePassword from '../../superAdminView/CompanyManagement/CompanyChangePassword';
+import UserChangePassword from './UserChangePassword';
 
 // --- Redux Imports ---
 import {
@@ -660,7 +660,7 @@ export default function ViewProfileView({ profileData: passedProfileData }) {
                     </Paper>
                 </Grid>
             </Grid>
-              <CompanyChangePassword
+              <UserChangePassword
                 open={isChangePasswordOpen}
                 onClose={() => setIsChangePasswordOpen(false)}
                 userId={userId}

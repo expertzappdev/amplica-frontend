@@ -112,9 +112,11 @@ const userProfileSlice = createSlice({
      changeUserPasswordRequest: (state) => { 
       state.loading = true; 
       state.error = null; 
+      state.isPasswordChanged = false;
     },
     changeUserPasswordSuccess: (state) => { 
       state.loading = false; 
+      state.isPasswordChanged = true;
     },
     getUserProfileSuccess: (state, action) => { state.loading = false; 
       state.userProfileDetail = action.payload; 
