@@ -1,4 +1,4 @@
-import { call, put, takeLatest, all, select } from 'redux-saga/effects';
+import { call, put, takeLatest, all, select, delay } from 'redux-saga/effects';
 import { AuthAPI, setAuthToken } from '../../../services/api';
 import {
   loginSuccess,
@@ -90,8 +90,12 @@ function* handleImpersonate(action) {
     const responseData = response.data;
     // Update axios default header to use the impersonation token
     yield call(setAuthToken, responseData.token);
-    yield put(impersonateSuccess(responseData));
     if (onSuccess) yield call(onSuccess, responseData);
+    
+    // Wait for React Router to process the navigation before updating Redux state
+    yield delay(100);
+    
+    yield put(impersonateSuccess(responseData));
   } catch (error) {
     const errorMessage = error.response?.data?.message || 'Impersonation failed. Please try again.';
     yield put(impersonateFailure(errorMessage));
