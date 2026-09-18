@@ -1,0 +1,12 @@
+@import '../../utils/constant.css';
+
+.customIconStyle {
+    color: var(--success-main);
+    margin-right: 8px;
+    margin-bottom: 15px;
+}
+
+.dropdown {
+    width: 30%;
+    margin: 10px;
+}

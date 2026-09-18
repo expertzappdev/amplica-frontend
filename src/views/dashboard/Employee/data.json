@@ -1,0 +1,50 @@
+{
+    "projectWorkLog": {
+      "series": [44, 55, 30, 25],
+      "labels": ["Project 1", "Project 2", "Project 3", "Project 4"],
+      "colors": ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0"]
+    },
+    "tasks": {
+      "series": [32, 25, 25, 18],
+      "labels": ["Completed", "On Hold", "On Progress", "Pending"],
+      "colors": ["#3f51b5", "#9c27b0", "#00bcd4", "#f44336"]
+    },
+    "myTasks": [
+      {
+        "id": 1,
+        "title": "Run paid ad campaigns (Google, Facebook, LinkedIn)",
+        "category": "Customer Acquisition Strategy",
+        "dueDate": "05-09-2025",
+        "status": "Overdue"
+      },
+      {
+        "id": 2,
+        "title": "Launch email outreach campaigns",
+        "category": "Customer Acquisition Strategy",
+        "dueDate": "05-10-2025"
+      },
+      {
+        "id": 3,
+        "title": "Implement SEO strategy for organic lead generation",
+        "category": "Customer Acquisition Strategy",
+        "dueDate": "05-11-2025"
+      },
+      {
+        "id": 4,
+        "title": "Partner with influencers & affiliates",
+        "category": "Customer Acquisition Strategy",
+        "dueDate": "05-12-2025"
+      },
+      {
+        "id": 5,
+        "title": "Set up & optimize lead capture forms",
+        "category": "Customer Acquisition Strategy",
+        "dueDate": "05-13-2025"
+      }
+    ],
+    "reports": {
+      "achieved": [4, 5, 3, 6, 7, 6, 5],
+      "target": [3, 4, 2, 5, 6, 5, 4],
+      "labels": ["Oct 2021", "Nov 2021", "Dec 2021", "Jan 2022", "Feb 2022", "Mar 2022"]
+    }
+  }

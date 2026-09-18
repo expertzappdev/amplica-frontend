@@ -1,0 +1,11 @@
+@import '../../utils/constant.css';
+
+.localAirportIcon {
+  font-size: var(--font-size-s);
+  margin-top: 15px;
+  font-size: var(--font-size-l);
+}
+
+.myTimeoffTab {
+  margin-left: 36%;
+}

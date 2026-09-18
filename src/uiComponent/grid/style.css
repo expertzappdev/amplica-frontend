@@ -1,0 +1,28 @@
+/* styles.css */
+
+.employeeCell {
+    display: flex;
+    align-items: center;
+  }
+  
+  .employeeName {
+    margin-left: 8px;
+  }
+  
+  .employeeName {
+  position: relative;
+  cursor: pointer;
+}
+
+.employeeName:hover::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -4px; /* Adjust the value based on your preference */
+  width: 100%;
+  height: 1px; /* Height of the underline */
+  background-color: #000; /* Change the color as needed */
+}
+.rounded-circle{
+  border-radius: 50%;
+}

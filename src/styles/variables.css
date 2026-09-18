@@ -1,0 +1,207 @@
+/* // =================================================================================
+// FILE: src/styles/variables.css
+// Purpose: Defines global CSS custom properties. This is an alternative or
+//          complement to the JS theme, especially if not using Tailwind CSS
+//          or for properties not easily managed by Tailwind's config.
+//          It demonstrates how the JS theme could be translated to CSS variables.
+// ================================================================================= */
+
+:root {
+    /* // -- Palette: Primary (Indigo Example) -- */
+    --color-primary-lightest: #E8EAF6;
+    --color-primary-lighter: #C5CAE9;
+    --color-primary-light: #7986CB;
+    --color-primary-main: #3F51B5;
+    --color-primary-dark: #303F9F;
+    --color-primary-darker: #283593;
+    --color-primary-darkest: #1A237E;
+    --color-primary-contrast-text: #FFFFFF;
+    --color-primary-hover: rgba(63, 81, 181, 0.08);
+    --color-primary-selected: rgba(63, 81, 181, 0.12);
+    --color-primary-active: rgba(63, 81, 181, 0.16);
+  
+    /* // -- Palette: Secondary (Pink Example) -- */
+    --color-secondary-lightest: #FCE4EC;
+    --color-secondary-lighter: #F8BBD0;
+    --color-secondary-light: #F48FB1;
+    --color-secondary-main: #E91E63;
+    --color-secondary-dark: #C2185B;
+    --color-secondary-darker: #AD1457;
+    --color-secondary-darkest: #880E4F;
+    --color-secondary-contrast-text: #FFFFFF;
+    --color-secondary-hover: rgba(233, 30, 99, 0.08);
+    --color-secondary-selected: rgba(233, 30, 99, 0.12);
+    --color-secondary-active: rgba(233, 30, 99, 0.16);
+  
+    /* // -- Palette: Accent (Cyan Example) -- */
+    --color-accent-lightest: #E0F7FA;
+    --color-accent-lighter: #B2EBF2;
+    --color-accent-light: #80DEEA;
+    --color-accent-main: #00BCD4;
+    --color-accent-dark: #00ACC1;
+    --color-accent-darker: #0097A7;
+    --color-accent-darkest: #006064;
+    --color-accent-contrast-text: #000000;
+  
+    /* // -- Palette: Backgrounds -- */
+    --color-bg-default: #F9FAFB; /* commonGrayScale[50] */
+    --color-bg-paper: #FFFFFF;   /* commonGrayScale[0] */
+    --color-bg-alt: #F3F4F6;     /* commonGrayScale[100]*/
+    --color-bg-inverse: #111827; /* commonGrayScale[900]*/
+    --color-bg-overlay: rgba(3, 7, 18, 0.6); /* commonGrayScale[950] with alpha*/
+  
+    /* // -- Palette: Text -- */
+    --color-text-primary: #111827;    /* commonGrayScale[900]*/
+    --color-text-secondary: #374151;  /* commonGrayScale[700]*/
+    --color-text-tertiary: #6B7280;   /* commonGrayScale[500]*/
+    --color-text-disabled: #9CA3AF;   /* commonGrayScale[400]*/
+    --color-text-inverse: #FFFFFF;    /* commonGrayScale[0]*/
+    --color-text-link: #2563EB;       /* commonBlueScale[600]*/
+    --color-text-link-hover: #1D4ED8; /* commonBlueScale[700]*/
+    --color-text-placeholder: #9CA3AF; /* commonGrayScale[400]*/
+  
+    /* // -- Palette: Borders & Dividers -- */
+    --color-border-default: #D1D5DB; /* commonGrayScale[300]*/
+    --color-border-subtle: #E5E7EB;  /* commonGrayScale[200]*/
+    --color-border-strong: #9CA3AF;  /* commonGrayScale[400]*/
+    --color-border-focus: #3B82F6;   /* commonBlueScale[500]*/
+    --color-border-outline: #374151; /* commonGrayScale[700]*/
+    --color-divider: #E5E7EB;        /* commonGrayScale[200]*/
+  
+    /* // -- Palette: UI States -- */
+    --color-ui-hover: rgba(107, 114, 128, 0.08); /* commonGrayScale[500] with alpha*/
+    --color-ui-selected: rgba(59, 130, 246, 0.1); /* commonBlueScale[500] with alpha*/
+    --color-ui-active: rgba(59, 130, 246, 0.15);
+    --color-ui-disabled-bg: #F3F4F6;   /* commonGrayScale[100]*/
+    --color-ui-disabled-content: #9CA3AF; /* commonGrayScale[400]*/
+    --color-ui-focus-ring: rgba(59, 130, 246, 0.5);
+  
+    /* // -- Palette: Status -- */
+    --color-status-success-main: #16A34A; --color-status-success-light: #4ADE80; --color-status-success-dark: #166534; --color-status-success-contrast-text: #FFFFFF;
+    --color-status-warning-main: #F97316; --color-status-warning-light: #FDBA74; --color-status-warning-dark: #C2410C; --color-status-warning-contrast-text: #000000;
+    --color-status-error-main: #DC2626;   --color-status-error-light: #F87171;   --color-status-error-dark: #991B1B;   --color-status-error-contrast-text: #FFFFFF;
+    --color-status-info-main: #14B8A6;    --color-status-info-light: #5EEAD4;    --color-status-info-dark: #0F766E;    --color-status-info-contrast-text: #FFFFFF;
+    --color-status-neutral-main: #6B7280; --color-status-neutral-light: #D1D5DB; --color-status-neutral-dark: #374151; --color-status-neutral-contrast-text: #FFFFFF;
+  
+    /* // -- Shadows -- */
+    --shadow-base-color-rgb: 0, 0, 0;
+    --shadow-umbra-opacity: 0.1;
+    --shadow-penumbra-opacity: 0.07;
+    --shadow-ambient-opacity: 0.06;
+    --shadow-xs: 0 1px 2px 0 rgba(var(--shadow-base-color-rgb), var(--shadow-umbra-opacity));
+    --shadow-sm: 0 1px 3px 0 rgba(var(--shadow-base-color-rgb), var(--shadow-umbra-opacity)), 0 1px 2px -1px rgba(var(--shadow-base-color-rgb), var(--shadow-penumbra-opacity));
+    --shadow-md: 0 4px 6px -1px rgba(var(--shadow-base-color-rgb), var(--shadow-umbra-opacity)), 0 2px 4px -2px rgba(var(--shadow-base-color-rgb), var(--shadow-penumbra-opacity));
+    --shadow-lg: 0 10px 15px -3px rgba(var(--shadow-base-color-rgb), var(--shadow-umbra-opacity)), 0 4px 6px -4px rgba(var(--shadow-base-color-rgb), var(--shadow-penumbra-opacity));
+    --shadow-xl: 0 20px 25px -5px rgba(var(--shadow-base-color-rgb), var(--shadow-umbra-opacity)), 0 8px 10px -6px rgba(var(--shadow-base-color-rgb), var(--shadow-penumbra-opacity));
+    --shadow-2xl: 0 25px 50px -12px rgba(var(--shadow-base-color-rgb), 0.25);
+    --shadow-inner: inset 0 2px 4px 0 rgba(var(--shadow-base-color-rgb), var(--shadow-ambient-opacity));
+  
+    /* // -- Typography (matches JS theme) -- */
+    --font-family-primary: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+    --font-family-secondary: Lora, Georgia, Cambria, "Times New Roman", Times, serif;
+    --font-family-monospace: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --font-size-root-percentage: 100%;
+    --font-size-base-body: 1rem;
+    --font-size-3xs: 0.5rem; --font-size-2xs: 0.625rem; --font-size-xs: 0.75rem; --font-size-sm: 0.875rem; --font-size-md: 1rem; --font-size-lg: 1.125rem; --font-size-xl: 1.25rem;
+    --font-size-2xl: 1.5rem; --font-size-3xl: 1.875rem; --font-size-4xl: 2.25rem; --font-size-5xl: 3rem; --font-size-6xl: 3.75rem; --font-size-7xl: 4.5rem;
+    
+  
+    /* // -- Spacing (matches JS theme, example for a few) -- */
+    --spacing-px: 1px; --spacing-0: 0; --spacing-0_5: 0.125rem; --spacing-1: 0.25rem; --spacing-2: 0.5rem; --spacing-4: 1rem; --spacing-16: 4rem;
+  
+    /* // -- Borders & Radii (matches JS theme) -- */
+    --border-width-none: 0px; --border-width-hairline: 0.5px; --border-width-thin: 1px; --border-width-medium: 2px; --border-width-thick: 4px; --border-width-heavy: 8px;
+    --radius-none: 0px; --radius-xs: 2px; --radius-sm: 4px; --radius-md: 8px; --radius-lg: 12px; --radius-xl: 16px; --radius-2xl: 24px; --radius-3xl: 32px; --radius-full: 9999px;
+  
+    /* // -- Z-Indices (matches JS theme) -- */
+    --z-hide: -1; --z-base: 0; --z-content: 1; --z-sticky: 100; --z-scrim: 500; --z-dropdown: 1000; --z-modal: 1100; --z-drawer: 1200; --z-popover: 1300; --z-tooltip: 1400; --z-toast: 1500; --z-max: 2147483647;
+  
+    /* // -- Layout (matches JS theme) -- */
+    --layout-content-max-width: 1440px;
+    --layout-container-padding-x: 1.5rem; 
+  }
+  
+  [data-theme="dark"] { 
+    /* Or .dark-mode or @media (prefers-color-scheme: dark)
+    --- Dark Mode Overrides --- */
+  
+    /* -- Palette: Primary (Lighter Blue Example) -- */
+    --color-primary-lightest: #1E3A8A; /* commonBlueScale[800]*/
+    --color-primary-lighter: #1E40AF; /* commonBlueScale[700]*/
+    --color-primary-light: #60A5FA;   /* commonBlueScale[400]*/
+    --color-primary-main: #3B82F6;    /* commonBlueScale[500]*/
+    --color-primary-dark: #93C5FD;    /* commonBlueScale[300]*/
+    --color-primary-darker: #BFDBFE;  /* commonBlueScale[200]*/
+    --color-primary-darkest: #DBEAFE; /* commonBlueScale[100]*/
+    --color-primary-contrast-text: #030712; /* commonGrayScale[950]*/
+    --color-primary-hover: rgba(96, 165, 250, 0.12);
+    --color-primary-selected: rgba(96, 165, 250, 0.16);
+    --color-primary-active: rgba(96, 165, 250, 0.20);
+  
+    /* // -- Palette: Secondary (Lighter Purple Example) -- */
+    --color-secondary-lightest: #581C87; /* commonPurpleScale[800]*/
+    --color-secondary-lighter: #6B21A8; /* commonPurpleScale[700]*/
+    --color-secondary-light: #C084FC;   /* commonPurpleScale[400]*/
+    --color-secondary-main: #A855F7;    /* commonPurpleScale[500]*/
+    --color-secondary-dark: #D8B4FE;    /* commonPurpleScale[300]*/
+    --color-secondary-darker: #E9D5FF;  /* commonPurpleScale[200]*/
+    --color-secondary-darkest: #F3E8FF; /* commonPurpleScale[100]*/
+    --color-secondary-contrast-text: #030712;
+    --color-secondary-hover: rgba(192, 132, 252, 0.12);
+    --color-secondary-selected: rgba(192, 132, 252, 0.16);
+    --color-secondary-active: rgba(192, 132, 252, 0.20);
+  
+    /* // -- Palette: Accent (Lighter Teal Example) -- */
+    --color-accent-lightest: #115E59; /* commonTealScale[800]*/
+    --color-accent-lighter: #0F766E; /* commonTealScale[700]*/
+    --color-accent-light: #5EEAD4;   /* commonTealScale[300]*/
+    --color-accent-main: #2DD4BF;    /* commonTealScale[400]*/
+    --color-accent-dark: #99F6E4;    /* commonTealScale[200]*/
+    --color-accent-darker: #CCFBF1;  /* commonTealScale[100]*/
+    --color-accent-darkest: #F0FDFA; /* commonTealScale[50]*/
+    --color-accent-contrast-text: #030712;
+  
+    /* // -- Palette: Backgrounds -- */
+    --color-bg-default: #111827; /* commonGrayScale[900]*/
+    --color-bg-paper: #1F2937;   /* commonGrayScale[800]*/
+    --color-bg-alt: #030712;     /* commonGrayScale[950]*/
+    --color-bg-inverse: #F3F4F6; /* commonGrayScale[100]*/
+    --color-bg-overlay: rgba(249, 250, 251, 0.7); /* commonGrayScale[50] with alpha*/
+  
+    /* // -- Palette: Text -- */
+    --color-text-primary: #F9FAFB;    /* commonGrayScale[50]*/
+    --color-text-secondary: #D1D5DB;  /* commonGrayScale[300]*/
+    --color-text-tertiary: #9CA3AF;   /* commonGrayScale[400]*/
+    --color-text-disabled: #6B7280;   /* commonGrayScale[500]*/
+    --color-text-inverse: #111827;    /* commonGrayScale[900]*/
+    --color-text-link: #60A5FA;       /* commonBlueScale[400]*/
+    --color-text-link-hover: #93C5FD; /* commonBlueScale[300]*/
+    --color-text-placeholder: #6B7280; /* commonGrayScale[500]*/
+  
+    /* // -- Palette: Borders & Dividers -- */
+    --color-border-default: #374151; /* commonGrayScale[700]*/
+    --color-border-subtle: #1F2937;  /* commonGrayScale[800]*/
+    --color-border-strong: #4B5563;  /* commonGrayScale[600]*/
+    --color-border-focus: #60A5FA;   /* commonBlueScale[400]*/
+    --color-border-outline: #E5E7EB; /* commonGrayScale[200]*/
+    --color-divider: #374151;        /* commonGrayScale[700]*/
+  
+    /* // -- Palette: UI States -- */
+    --color-ui-hover: rgba(156, 163, 175, 0.12); /* commonGrayScale[400] with alpha*/
+    --color-ui-selected: rgba(96, 165, 250, 0.15); /* commonBlueScale[400] with alpha*/
+    --color-ui-active: rgba(96, 165, 250, 0.20);
+    --color-ui-disabled-bg: #374151;   /* commonGrayScale[700]*/
+    --color-ui-disabled-content: #6B7280; /* commonGrayScale[500]*/
+    --color-ui-focus-ring: rgba(96, 165, 250, 0.6);
+  
+    --color-status-success-main: #4ADE80; --color-status-success-light: #86EFAC; --color-status-success-dark: #22C55E; --color-status-success-contrast-text: #030712;
+    --color-status-warning-main: #FACC15; --color-status-warning-light: #FDE047; --color-status-warning-dark: #EAB308; --color-status-warning-contrast-text: #030712;
+    --color-status-error-main: #F87171;   --color-status-error-light: #FCA5A5;   --color-status-error-dark: #EF4444;   --color-status-error-contrast-text: #030712;
+    --color-status-info-main: #2DD4BF;    --color-status-info-light: #5EEAD4;    --color-status-info-dark: #14B8A6;    --color-status-info-contrast-text: #030712;
+    --color-status-neutral-main: #9CA3AF; --color-status-neutral-light: #D1D5DB; --color-status-neutral-dark: #6B7280; --color-status-neutral-contrast-text: #030712;
+  
+    --shadow-base-color-rgb: 0, 0, 0;
+    --shadow-umbra-opacity: 0.2; 
+    --shadow-penumbra-opacity: 0.14;
+    --shadow-ambient-opacity: 0.12;
+  }

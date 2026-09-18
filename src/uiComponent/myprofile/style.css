@@ -1,0 +1,82 @@
+
+  
+  
+  .field-container {
+    display: grid;
+    column-gap: 26px;
+    grid-template-columns: 150px minmax(0px, 1fr);
+    grid-template-areas: "title content" ". help";
+  }
+  
+  .field-title {
+    font-size: 14px;
+  }
+  
+  .field-value {
+    font-size: 14px;
+  }
+  
+  .field-input {
+    height: 40px;
+    font-size: 14px;
+    font-weight: normal;
+    line-height: 20px;
+    position: relative;
+    width: 100%;
+    display: block;
+    color: black;
+    border-radius: 3px;
+    box-shadow: rgb(212, 223, 231) 0px 0px 0px 1px inset;
+    background-color: rgb(255, 255, 255);
+    padding: 8px 12px;
+    width: 100%;
+    outline: none;
+    border: none;
+    appearance: none;
+  }
+
+  .mobile-no {
+    position: absolute; /* or absolute, depending on your layout needs */
+    z-index: 1; /* or any value that works for your layout */
+    height: "150px";
+  }
+  .react-tel-input .form-control {
+    position: relative;
+    font-size: 14px;
+    letter-spacing: .01rem;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding-left: 48px;
+    margin-left: 0;
+    background: #FFFFFF;
+    border: 1px solid #CACACA;
+    border-radius: 5px;
+    line-height: 25px;
+    height: 50px;
+    width: 131%;
+    outline: none;
+}
+.error-message{
+  color: red;
+  font-size:smaller;
+}
+ 
+  @media only screen and (max-width: 800px) {
+    .field-container {
+      grid-template-columns: minmax(0px, 1fr);
+      grid-template-areas:
+        "title"
+        "content"
+        "help";
+    }
+  
+    .field-input {
+      width: 100%;
+    }
+  }
+  
+  @media only screen and (max-width: 480px) {
+    .field-container {
+      column-gap: 0;
+    }
+  }

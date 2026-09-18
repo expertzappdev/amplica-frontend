@@ -1,0 +1,12 @@
+.flex-container-nodata {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+
+.icon-container {
+    box-sizing: border-box;
+}

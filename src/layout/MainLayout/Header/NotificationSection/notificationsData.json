@@ -1,0 +1,63 @@
+[
+    {
+      "id": "1",
+      "type": "TASK_ASSIGNMENT",
+      "avatarSrc": "assets/images/users/user-round.svg",
+      "avatarText": "JD",
+      "actorName": "John Doe",
+      "message": "assigned you a new task.",
+      "taskName": "Develop User Authentication Module",
+      "timestamp": "5 min ago",
+      "tags": ["New", "Urgent"],
+      "details": {
+        "dueDate": "2025-06-15"
+      }
+    },
+    {
+      "id": "2",
+      "type": "DEADLINE_REMINDER",
+      "icon": "IconBuildingStore",
+      "iconColor": "warning.dark",
+      "iconBgColor": "warning.light",
+      "title": "Project Deadline Approaching",
+      "message": "The project 'Alpha Launch' is due in 3 days.",
+      "timestamp": "30 min ago",
+      "tags": ["Reminder"]
+    },
+    {
+      "id": "3",
+      "type": "EMPLOYEE_ONBOARDING",
+      "icon": "IconMailbox",
+      "iconColor": "primary.dark",
+      "iconBgColor": "primary.light",
+      "title": "New Employee Joined",
+      "message": "Jane Smith has joined the team. Send her a welcome message!",
+      "timestamp": "1 hour ago",
+      "action": {
+        "label": "Welcome",
+        "icon": "IconBrandTelegram"
+      }
+    },
+    {
+      "id": "4",
+      "type": "PERFORMANCE_REVIEW",
+      "avatarSrc": "assets/images/users/user-hr.svg",
+      "actorName": "HR Department",
+      "message": "Your quarterly performance review is scheduled.",
+      "details": {
+        "reviewDate": "2025-06-10",
+        "documentName": "Q2_Performance.pdf"
+      },
+      "timestamp": "2 hours ago",
+      "tags": ["Important"]
+    },
+    {
+      "id": "5",
+      "type": "TASK_COMPLETION",
+      "avatarSrc": "assets/images/users/user-jane.svg",
+      "actorName": "Jane Smith",
+      "message": "marked the task 'Setup Development Environment' as complete.",
+      "timestamp": "3 hours ago",
+      "tags": ["Completed", "Task Update"]
+    }
+  ]

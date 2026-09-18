@@ -1,0 +1,39 @@
+
+@import '../../utils/constant.css';
+.attendancecard {
+  display: flex;
+
+}
+
+.insidecard {
+  gap: 40px;
+  display: flex;
+}
+
+.cards {
+  min-width: 120px;
+  padding: 0px 10px 1px;
+  border: 1px solid rgb(235, 240, 244);
+  border-radius: 4px;
+  box-shadow: rgba(95, 125, 149, 0.07);
+  background-color: #fff;
+  text-align: center; /* Center the contents */
+  height: auto;
+}
+
+.cardstitle {
+  color: var(--success-main);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-s);
+  margin: 15px 5px;
+}
+
+.schedule {
+  margin-top: 2px; /* Adjust as needed to create space between title and schedule */
+}
+
+@media (max-width: 1150px) {
+  .cards {
+    display: none;
+  }
+}
