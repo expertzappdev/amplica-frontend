@@ -649,48 +649,14 @@ export default function ViewProfileView({ profileData: passedProfileData }) {
                                 <Tab label="Job Information" id="view-profile-tab-1" aria-controls="view-profile-tabpanel-1" />
                             </Tabs>
                             <Box sx={{ p: 2, display: 'flex', gap: 1 }}>
-                                {!isEditing ? (
-                                    <>
-                                        <Button 
-                                            variant="outlined" 
-                                            size="small" 
-                                            onClick={() => setIsChangePasswordOpen(true)}
-                                            sx={{ borderRadius: '6px', textTransform: 'none' }}
-                                        >
-                                            Change Password
-                                        </Button>
-                                        <Button 
-                                            variant="contained" 
-                                            color="primary"
-                                            size="small"
-                                            startIcon={<EditIcon />}
-                                            onClick={handleEditClick}
-                                            sx={{ borderRadius: '6px', textTransform: 'none' }}
-                                        >
-                                            Edit Member
-                                        </Button>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Button 
-                                            variant="outlined" 
-                                            size="small" 
-                                            onClick={handleCancel}
-                                            sx={{ borderRadius: '6px', textTransform: 'none' }}
-                                        >
-                                            Cancel
-                                        </Button>
-                                        <Button 
-                                            variant="contained" 
-                                            color="primary"
-                                            size="small"
-                                            onClick={handleSave}
-                                            sx={{ borderRadius: '6px', textTransform: 'none' }}
-                                        >
-                                            Save Changes
-                                        </Button>
-                                    </>
-                                )}
+                                <Button 
+                                    variant="outlined" 
+                                    size="small" 
+                                    onClick={() => setIsChangePasswordOpen(true)}
+                                    sx={{ borderRadius: '6px', textTransform: 'none' }}
+                                >
+                                    Change Password
+                                </Button>
                             </Box>
                         </Box>
 
