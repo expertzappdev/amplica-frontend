@@ -51,6 +51,7 @@ const defaultSelections = {
   loggedAtTo: '',
   durationFrom: '',
   isDeletedFilter: false,
+  isActiveFilter: true,
 };
 
 export default function AdvancedSortDrawer({
@@ -78,7 +79,9 @@ export default function AdvancedSortDrawer({
       if (initial.loggedAtFrom) activeSections.push('loggedAtFrom');
       if (initial.loggedAtTo) activeSections.push('loggedAtTo');
       if (initial.durationFrom) activeSections.push('durationFrom');
-      if (initial.isDeletedFilter !== undefined) activeSections.push('isDeletedFilter');
+      if (initial.isActiveFilter !== undefined) {
+  activeSections.push('userStatus');
+}
       
       if (initial.startDateFrom || initial.endDateTo) {
           const presets = ['today', 'this_week', 'last_week', 'this_month'];
@@ -437,26 +440,49 @@ export default function AdvancedSortDrawer({
     { key: 'this_month', label: 'This Month' },
     { key: 'custom', label: 'Custom' },
   ];
-  
-  const renderIsDeletedFilterSection = (section) => (
-    <FormControl component="fieldset">
-      <RadioGroup
-        row
-        name="isDeletedFilter"
-        value={selections.isDeletedFilter.toString()}
-        onChange={(e) => handleSelectionChange('isDeletedFilter', e.target.value === 'true')}
-      >
-        {section.options.map((opt) => (
-          <FormControlLabel 
-            key={opt.key.toString()} 
-            value={opt.key.toString()} 
-            control={<Radio />} 
-            label={opt.label} 
-          />
-        ))}
-      </RadioGroup>
-    </FormControl>
-  );
+
+  const renderUserStatusSection = (section) => (
+  <FormControl component="fieldset">
+    <RadioGroup
+      row
+      name="userStatus"
+      value={
+        selections.isDeletedFilter
+          ? 'deleted'
+          : selections.isActiveFilter
+            ? 'active'
+            : 'inactive'
+      }
+      onChange={(e) => {
+        const value = e.target.value;
+
+        if (value === 'active') {
+          handleSelectionChange('isActiveFilter', true);
+          handleSelectionChange('isDeletedFilter', false);
+        }
+
+        if (value === 'inactive') {
+          handleSelectionChange('isActiveFilter', false);
+          handleSelectionChange('isDeletedFilter', false);
+        }
+
+        if (value === 'deleted') {
+          handleSelectionChange('isActiveFilter', null);
+          handleSelectionChange('isDeletedFilter', true);
+        }
+      }}
+    >
+      {section.options.map((opt) => (
+        <FormControlLabel
+          key={opt.key}
+          value={opt.key}
+          control={<Radio />}
+          label={opt.label}
+        />
+      ))}
+    </RadioGroup>
+  </FormControl>
+);
 
   const renderDurationSection = () => (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -508,7 +534,7 @@ export default function AdvancedSortDrawer({
       case 'loggedAtFrom': return renderLoggedAtFromSection();
       case 'loggedAtTo': return renderLoggedAtToSection();
       case 'durationFrom': return renderDurationFromSection();
-      case 'isDeletedFilter': return renderIsDeletedFilterSection(section);
+     case 'userStatus':return renderUserStatusSection(section);
       default: return null;
     }
   };

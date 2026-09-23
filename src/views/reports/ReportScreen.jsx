@@ -496,11 +496,11 @@ export default function ReportScreen() {
   };
 
   const renderFiltersRow = () => (
-      
+
     <Paper elevation={0} sx={{ ...cardStyle, py: 1, px: 2, mb: 2 }}>
       <Grid container spacing={2} alignItems="flex-start">
         <Grid item size={{ xs: 12, sm: 4, md: 4, lg: 4 }}>
-       
+
           <Typography variant="subtitle2" sx={{ mb: 0.5, fontWeight: 600, color: 'text.primary', fontSize: '0.8rem' }}>
             Team Member
           </Typography>
@@ -511,28 +511,28 @@ export default function ReportScreen() {
               onClick={() => setMemberModalOpen(true)}
               disabled={!canSelectMember || reportLoading}
               endIcon={reportLoading ? <CircularProgress size={18} /> : <KeyboardArrowDownIcon />}
-            
+
               sx={{
-  justifyContent: 'space-between',
-  textTransform: 'none',
-  height: '38px',
-  borderRadius: 2,
-  borderColor: 'rgba(0, 0, 0, 0.23)',
-  borderWidth: '1px',
+                justifyContent: 'space-between',
+                textTransform: 'none',
+                height: '38px',
+                borderRadius: 2,
+                borderColor: 'rgba(0, 0, 0, 0.23)',
+                borderWidth: '1px',
 
-  '&:hover': {
-    borderWidth: '1px',
-    borderColor: 'text.primary'
-  },
+                '&:hover': {
+                  borderWidth: '1px',
+                  borderColor: 'text.primary'
+                },
 
-  '&.Mui-disabled': {
-    borderWidth: '1px',
-    borderColor: 'rgba(0, 0, 0, 0.12)'
-  },
+                '&.Mui-disabled': {
+                  borderWidth: '1px',
+                  borderColor: 'rgba(0, 0, 0, 0.12)'
+                },
 
-  color: !canSelectMember ? 'text.disabled' : 'text.primary',
-  px: 1.5
-}}
+                color: !canSelectMember ? 'text.disabled' : 'text.primary',
+                px: 1.5
+              }}
             >
               <Typography variant="body1" sx={{ fontWeight: 500 }}>
                 {selectedMember?.name || 'Select Member'}
@@ -540,13 +540,13 @@ export default function ReportScreen() {
             </Button>
           </FormControl>
           {!canSelectMember && (
- <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block', fontSize: '0.7rem' }}>              Limited to your own reports
-         
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block', fontSize: '0.7rem' }}>              Limited to your own reports
+
             </Typography>
           )}
           {canSelectMember && !canReadAllReports && (
             <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block', minHeight: '20px' }}>
-            
+
               Limited to your department: {userProfile?.departmentName || '...'}
             </Typography>
           )}
@@ -554,8 +554,8 @@ export default function ReportScreen() {
             <Box sx={{ minHeight: '0px', mt: 0.5 }} />
           )}
 
-    </Grid>
-  
+        </Grid>
+
 
         <Grid item size={{ xs: 12, sm: 4, md: 4, lg: 4 }}>
           <Typography variant="subtitle2" sx={{ mb: 0.5, fontWeight: 600, color: 'text.primary', fontSize: '0.8rem' }}>
@@ -569,7 +569,7 @@ export default function ReportScreen() {
               displayEmpty
               sx={{
                 borderRadius: 2,
-               
+
                 height: '38px',
                 fontSize: '0.825rem',
                 '& .MuiSelect-select': {
@@ -617,7 +617,7 @@ export default function ReportScreen() {
               displayEmpty
               sx={{
                 borderRadius: 2,
-                
+
                 height: '38px',
                 fontSize: '0.825rem',
                 '& .MuiSelect-select': {
@@ -1008,30 +1008,83 @@ export default function ReportScreen() {
         <Typography variant="h6" sx={{ mb: 3, fontWeight: 700, fontSize: '18px', color: 'text.primary' }}>
           Detailed Tasks Breakdown (Date-wise)
         </Typography>
-        <Stack spacing={4}>
-          {reportData.tasksByDate.map((dateGroup) => (
-            <Box key={dateGroup.date}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-                <CalendarTodayIcon sx={{ color: 'primary.main', fontSize: '1.2rem' }} />
-                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary' }}>
-                  {format(parseISO(dateGroup.date), 'eeee, MMMM do, yyyy')}
-                </Typography>
-                <Chip
-                  label={`${dateGroup.taskCount} tasks`}
-                  size="small"
-                  color="primary"
-                  variant="outlined"
-                  sx={{ ml: 1, height: 20, fontSize: '0.7rem' }}
-                />
-              </Box>
-              {renderTaskTable(
-                dateGroup.tasks,
-                `Tasks on ${format(parseISO(dateGroup.date), 'MMM do')}`,
-                'No tasks recorded for this day',
-                'DateGroup'
-              )}
-            </Box>
-          ))}
+        <Stack spacing={2}>
+          {reportData.tasksByDate.map((dateGroup, index) => {
+            const tasks = dateGroup.tasks || [];
+            const totalEstHours = tasks.reduce((sum, t) => {
+              const val = parseFloat(t.estimatedHours);
+              return sum + (isNaN(val) ? 0 : val);
+            }, 0);
+            const totalActHours = tasks.reduce((sum, t) => {
+              const val = parseFloat(t.actualHours);
+              return sum + (isNaN(val) ? 0 : val);
+            }, 0);
+
+            return (
+              <Accordion key={dateGroup.date} defaultExpanded={index === 0} sx={dateAccordionStyle}>
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon color="primary" sx={{ fontSize: '1.2rem' }} />}
+                  sx={{
+                    px: 2,
+                    py: 1,
+                    minHeight: '14px !important',
+                    bgcolor: 'background.paper',
+                    '&:hover': {
+                      bgcolor: 'action.hover'
+                    },
+                    '& .MuiAccordionSummary-content': {
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      flexWrap: 'wrap',
+                      gap: 2,
+                      my: '7px !important'
+                    }
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <CalendarTodayIcon sx={{ color: 'primary.main', fontSize: '1rem' }} />
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                      {format(parseISO(dateGroup.date), 'eeee, MMMM do, yyyy')}
+                    </Typography>
+                    <Chip
+                      label={`${dateGroup.taskCount || tasks.length} tasks`}
+                      size="small"
+                      color="primary"
+                      variant="outlined"
+                      sx={{ height: 22, fontSize: '0.75rem', fontWeight: 600 }}
+                    />
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+                    <Chip
+                      icon={<AccessTimeIcon sx={{ fontSize: '14px !important' }} />}
+                      label={`Est: ${totalEstHours.toFixed(1)}h`}
+                      size="small"
+                      variant="outlined"
+                      color="primary"
+                      sx={{ height: 24 }}
+                    />
+                    <Chip
+                      icon={<AccessTimeIcon sx={{ fontSize: '14px !important' }} />}
+                      label={`Actual: ${totalActHours.toFixed(1)}h`}
+                      size="small"
+                      variant="outlined"
+                      color="secondary"
+                      sx={{ height: 24 }}
+                    />
+                  </Box>
+                </AccordionSummary>
+                <AccordionDetails sx={{ p: 0, borderTop: '1px solid', borderColor: 'divider' }}>
+                  {renderTaskTable(
+                    tasks,
+                    `Tasks on ${format(parseISO(dateGroup.date), 'MMM do')}`,
+                    'No tasks recorded for this day',
+                    'DateGroup',
+                    true
+                  )}
+                </AccordionDetails>
+              </Accordion>
+            );
+          })}
         </Stack>
 
         <TablePagination
@@ -1181,12 +1234,12 @@ export default function ReportScreen() {
           {paginatedCompanyDates.map((dateGroup, index) => (
             <Accordion key={dateGroup.date} defaultExpanded={index === 0} sx={dateAccordionStyle}>
               <AccordionSummary
-                expandIcon={<ExpandMoreIcon color="primary" sx={{ fontSize: '1.2rem' }}/>}
+                expandIcon={<ExpandMoreIcon color="primary" sx={{ fontSize: '1.2rem' }} />}
                 sx={{
                   px: 2,
                   py: 1,
-                  minHeight:'14px !important',
-                  
+                  minHeight: '14px !important',
+
                   bgcolor: 'background.paper',
                   '&:hover': {
                     bgcolor: 'action.hover'
@@ -1376,10 +1429,6 @@ export default function ReportScreen() {
 
         {renderFiltersRow()}
 
-        {selectedMember?.id === 'all'
-          ? renderPerformanceSummary(companyReportData?.companySummary, 'All Members')
-          : renderPerformanceSummary(reportData?.summary, reportData?.userName || selectedMember?.name || 'Current User')
-        }
 
         {/* Detailed Breakdown */}
         {selectedMember?.id === 'all'

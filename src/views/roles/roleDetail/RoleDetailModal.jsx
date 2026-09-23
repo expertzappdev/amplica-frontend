@@ -14,6 +14,8 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import UpdateIcon from '@mui/icons-material/Update';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { format, parseISO, isValid } from 'date-fns';
 import Can from '../../../uiComponent/Can';
 import { 
@@ -55,6 +57,8 @@ export default function RoleDetailModal({
     onUpdateRole
 }) {
     const [localIsActive, setLocalIsActive] = useState(true);
+    const [expandedModule, setExpandedModule] = useState(null);
+    const [hasAutoOpened, setHasAutoOpened] = useState(false);
     
     // Get permissions from Redux store
     const permissionsData = useSelector(selectAllPermissions);
@@ -155,8 +159,20 @@ export default function RoleDetailModal({
     useEffect(() => {
         if (role) {
             setLocalIsActive(role.isActive !== false);
+            // expandedModule and hasAutoOpened reset is handled below
         }
     }, [role]);
+
+    useEffect(() => {
+        if (open && modules.length > 0 && !hasAutoOpened) {
+            setExpandedModule(modules[0].moduleId);
+            setHasAutoOpened(true);
+        }
+        if (!open) {
+            setHasAutoOpened(false);
+            setExpandedModule(null);
+        }
+    }, [open, modules, hasAutoOpened]);
 
     const handleStatusToggle = () => {
         if (role.defaultRole === "true" || role.defaultRole === true) {
@@ -438,26 +454,34 @@ export default function RoleDetailModal({
                                                 return (
                                                     <React.Fragment key={module.moduleId}>
                                                         {/* Module Header */}
-                                                        <TableRow sx={{ backgroundColor: 'action.hover' }}>
+                                                        <TableRow 
+                                                            sx={{ backgroundColor: 'action.hover', cursor: 'pointer' }}
+                                                            onClick={() => setExpandedModule(expandedModule === module.moduleId ? null : module.moduleId)}
+                                                        >
                                                             <TableCell colSpan={allPermissionTypes.length + 2} sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}>
                                                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                                     <Typography variant="subtitle2" color="primary">
                                                                         {module.moduleName}
                                                                     </Typography>
-                                                                    <Chip 
-                                                                        label={`${moduleStats.granted}/${moduleStats.total}`}
-                                                                        size="small"
-                                                                        color={
-                                                                            moduleStats.granted === moduleStats.total ? 'success' : 
-                                                                            moduleStats.granted > 0 ? 'warning' : 'default'
-                                                                        }
-                                                                        sx={{ fontSize: '0.7rem', height: 18 }}
-                                                                    />
+                                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                                        <Chip 
+                                                                            label={`${moduleStats.granted}/${moduleStats.total}`}
+                                                                            size="small"
+                                                                            color={
+                                                                                moduleStats.granted === moduleStats.total ? 'success' : 
+                                                                                moduleStats.granted > 0 ? 'warning' : 'default'
+                                                                            }
+                                                                            sx={{ fontSize: '0.7rem', height: 18 }}
+                                                                        />
+                                                                        <IconButton size="small" sx={{ p: 0.5 }}>
+                                                                            {expandedModule === module.moduleId ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+                                                                        </IconButton>
+                                                                    </Box>
                                                                 </Box>
                                                             </TableCell>
                                                         </TableRow>
                                                         {/* Resources */}
-                                                        {module.resources.map((resource) => {
+                                                        {expandedModule === module.moduleId && module.resources.map((resource) => {
                                                             const resourceStats = getResourceStats(resource);
                                                             const hasAnyResourcePermission = resourceStats.granted > 0;
                                                             

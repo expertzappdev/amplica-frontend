@@ -24,6 +24,9 @@ import {
   setUsersQuery,
   requestFailure, // General failure action in profileSlice
   selectUsersQuery,
+  deleteProfileImageRequest,
+deleteProfileImageSuccess,
+deleteProfileImageFailure,
 } from './profileSlice';
 import toast from 'react-hot-toast';
 import { selectUser } from '../auth/authSlice';
@@ -124,7 +127,13 @@ function* handleUpdateUser(action) {
     const response = yield call(UserAPI.updateUser, userId, userData);
     const updatedUser = response.data?.data || response.data;
     yield put(updateUserSuccess(updatedUser));
-    toast.success('User Updated Successfully', { variant: 'success' });
+    const message = userData.isActive
+  ? 'Team member is now active. You can find them under Active Users.'
+  : 'Team member is now inactive. You can find them under Inactive Users.';
+  toast.success(message, { variant: 'success' });
+
+  // Give the user a moment to see the status change
+yield delay(2000);
 
     if (onSuccess) {
       yield call(onSuccess, updatedUser);
@@ -223,7 +232,40 @@ function* handleUploadProfileImage(action) {
     }
   }
 }
+// handle delete profile image
 
+function* handleDeleteProfileImage(action) {
+  try {
+    const { userId, onSuccess, onFailure } = action.payload;
+
+    yield call(UserAPI.deleteProfileImage, userId);
+
+    yield put(deleteProfileImageSuccess());
+
+    toast.success('Profile Image Deleted Successfully', {
+      variant: 'success',
+    });
+
+    if (onSuccess) {
+      yield call(onSuccess);
+    }
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.message ||
+      'Failed to delete image.';
+
+    yield put(deleteProfileImageFailure(errorMessage));
+
+    toast.error(errorMessage, {
+      variant: 'error',
+    });
+
+    if (onFailure) {
+      yield call(onFailure, errorMessage);
+    }
+  }
+}
 
 // --- Watcher Sagas ---
 function* watchGetAllUsersRequest() {
@@ -256,7 +298,12 @@ function* watchUpdatePasswordRequest() {
 function* watchUploadProfileImageRequest() {
   yield takeLatest(uploadProfileImageRequest.type, handleUploadProfileImage);
 }
-
+function* watchDeleteProfileImageRequest() {
+  yield takeLatest(
+    deleteProfileImageRequest.type,
+    handleDeleteProfileImage
+  );
+}
 // --- Root Saga ---
 export default function* userProfileSagas() {
   yield all([
@@ -270,5 +317,6 @@ export default function* userProfileSagas() {
     watchUpdatePasswordRequest(),
     watchUploadProfileImageRequest(),
     watchChangeUserPasswordRequest(),
+    watchDeleteProfileImageRequest(),
   ]);
 }

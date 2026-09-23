@@ -41,9 +41,9 @@ import toast from 'react-hot-toast';
 
 function* handleFetchProjects({ payload }) {
   try {
-    // const currentQuery = yield select(selectQuery);
-    const defaults = { page: 1, pageSize: 5 };
-    const response = yield call(ProjectAPI.getAllProjects, { ...defaults, ...payload } );
+    const currentQuery = yield select(selectQuery);
+    const apiPayload = (!payload || Object.keys(payload).length === 0) ? currentQuery : { ...currentQuery, ...payload };
+    const response = yield call(ProjectAPI.getAllProjects, apiPayload );
     const responseData = response.data;
     // yield put(fetchProjectsSuccess(responseData.data.items));
     if (response.statusCode === 200) {

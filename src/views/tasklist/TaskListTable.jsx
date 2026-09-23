@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Box, Typography, IconButton, Collapse, Tooltip, Paper, Button, Chip, Avatar, AvatarGroup
+  Box, Typography, IconButton, Collapse, Tooltip, Paper, Button, Chip, Avatar, AvatarGroup, TableSortLabel
 } from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
@@ -94,7 +94,11 @@ const getStartDateDisplay = (startDateStr) => {
   }
 };
 
-function EnhancedTaskTableHead() {
+function EnhancedTaskTableHead({ order, orderBy, onRequestSort }) {
+  const createSortHandler = (property) => (event) => {
+    onRequestSort(property);
+  };
+
   return (
     <TableHead>
       <TableRow>
@@ -102,19 +106,50 @@ function EnhancedTaskTableHead() {
           <TableCell
             key={headCell.id}
             align={headCell.align || 'left'}
+            sortDirection={orderBy === headCell.id ? order : false}
             sx={{
               ...tableHeaderCellStyle,
               minWidth: headCell.minWidth,
               ...(headCell.noBorderRight && { borderRight: 'none' })
             }}
           >
-            {headCell.label}
+            {['actions', 'groupControl', 'serialNumber'].includes(headCell.id) ? (
+              headCell.label
+            ) : (
+              <TableSortLabel
+                active={orderBy === headCell.id}
+                direction={orderBy === headCell.id ? order : 'asc'}
+                onClick={createSortHandler(headCell.id)}
+                sx={{
+                  '& .MuiTableSortLabel-icon': {
+                    opacity: 1,
+                  }
+                }}
+              >
+                {headCell.label}
+              </TableSortLabel>
+            )}
           </TableCell>
         ))}
       </TableRow>
     </TableHead>
   );
 }
+
+const priorityMap = { high: 3, medium: 2, low: 1 };
+
+const getSortValue = (item, orderBy) => {
+  switch (orderBy) {
+    case 'taskName': return item.taskName?.toLowerCase() || '';
+    case 'assignedTo': return item.assignees?.[0]?.name?.toLowerCase() || '';
+    case 'status': return item.status?.toLowerCase() || '';
+    case 'startDate':
+    case 'dueDate': return item[orderBy] ? new Date(item[orderBy]).getTime() : 0;
+    case 'priority': return priorityMap[item.priority?.toLowerCase()] || 0;
+    case 'completion': return item.completion || 0;
+    default: return item[orderBy] || '';
+  }
+};
 
 function TaskListRowItem({
   taskList,
@@ -125,7 +160,9 @@ function TaskListRowItem({
   onEditTask,
   onDeleteTask,
   onDeleteTaskList,
-  onEditTaskList
+  onEditTaskList,
+  order,
+  orderBy
 }) {
   const [open, setOpen] = useState(initiallyExpanded);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -135,13 +172,30 @@ function TaskListRowItem({
   const canUpdateTask = can('task:update');
   const statusData = useSelector(selectStatusItems) || [];
 
-  // Add serial numbers to tasks within each task list
+  // Add serial numbers to tasks within each task list and sort them
   const tasksWithSerialNumbers = useMemo(() => {
-    return (taskList.tasks || []).map((task, index) => ({
+    let mapped = (taskList.tasks || []).map((task, index) => ({
       ...task,
       serialNumber: index + 1
     }));
-  }, [taskList.tasks]);
+    
+    if (orderBy) {
+      const mappedWithValues = mapped.map(item => ({
+        item,
+        sortValue: getSortValue(item, orderBy)
+      }));
+
+      mappedWithValues.sort((a, b) => {
+        if (a.sortValue < b.sortValue) return order === 'asc' ? -1 : 1;
+        if (a.sortValue > b.sortValue) return order === 'asc' ? 1 : -1;
+        return 0;
+      });
+
+      mapped = mappedWithValues.map(obj => obj.item);
+    }
+
+    return mapped;
+  }, [taskList.tasks, order, orderBy]);
 
   const getDueDateDisplay = (dueDateStr) => {
     try {
@@ -380,6 +434,15 @@ function TaskListRowItem({
 }
 
 export default function TaskListTable({ taskLists, onTaskStatusChange, onAddTask, onAddTaskList, onTaskClick, onEditTask, onDeleteTask, onDeleteTaskList, onEditTaskList }) {
+  const [order, setOrder] = useState('asc');
+  const [orderBy, setOrderBy] = useState('');
+
+  const handleRequestSort = (property) => {
+    const isAsc = orderBy === property && order === 'asc';
+    setOrder(isAsc ? 'desc' : 'asc');
+    setOrderBy(property);
+  };
+
   if (!taskLists || taskLists.length === 0) {
     return (
       <Box sx={{ p: 3, textAlign: 'center' }}>
@@ -392,7 +455,7 @@ export default function TaskListTable({ taskLists, onTaskStatusChange, onAddTask
   return (
     <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, overflowX: 'auto' }}>
       <Table aria-label="collapsible task list table" sx={{ minWidth: 1300 }} size="small">
-        <EnhancedTaskTableHead />
+        <EnhancedTaskTableHead order={order} orderBy={orderBy} onRequestSort={handleRequestSort} />
         <TableBody>
           {taskLists.map((taskList, index) => (
             <TaskListRowItem
@@ -406,6 +469,8 @@ export default function TaskListTable({ taskLists, onTaskStatusChange, onAddTask
               onDeleteTask={onDeleteTask}
               onDeleteTaskList={onDeleteTaskList}
               onEditTaskList={onEditTaskList}
+              order={order}
+              orderBy={orderBy}
             />
           ))}
         </TableBody>

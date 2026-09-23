@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  TableSortLabel, Box, Typography, Avatar, TablePagination, Paper, Link as MuiLink, Tooltip, IconButton, Skeleton
+  TableSortLabel, Box, Typography, Avatar, TablePagination, Paper, Link as MuiLink, Tooltip, IconButton, Skeleton, Switch
 } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import { visuallyHidden } from '@mui/utils';
@@ -11,6 +11,8 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import ConfirmationModal from '../../uiComponent/confirmationmodal';
 import { useCan } from '../../hooks/useCan';
+import { useDispatch } from 'react-redux';
+import { updateUserRequest } from '../../redux/features/profile/profileSlice';
 
 const sortByApiMapping = {
   serialNumber: 'employeeCode',
@@ -27,6 +29,7 @@ const headCells = [
   { id: 'department', label: 'Department', sortable: true },
   { id: 'role', label: 'Role', sortable: false },
   { id: 'joiningDate', label: 'Joining Date', sortable: true },
+  { id: 'status', label: 'Status', sortable: false },
   { id: 'actions', label: 'Actions', sortable: false, align: 'center' },
 ];
 
@@ -51,6 +54,7 @@ function EnhancedTableHead({ order, orderBy, onRequestSort }) {
   const createSortHandler = (property) => (event) => {
     onRequestSort(event, property);
   };
+
 
   return (
     <TableHead>
@@ -173,6 +177,9 @@ export default function EmployeesTable({
 }) {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [employeeToDelete, setEmployeeToDelete] = useState(null);
+  const [updatingUserId, setUpdatingUserId] = useState(null);
+  const [localStatuses, setLocalStatuses] = useState({});
+  const dispatch = useDispatch();
   const { can } = useCan();
   const canUpdateEmployee = can('employee:update');
   const canDeleteEmployee = can('employee:delete');
@@ -279,6 +286,40 @@ export default function EmployeesTable({
                   <TableCell sx={tableCellStyle}>
                     {emp.joiningDate ? getJoiningDateDisplay(emp.joiningDate) : 'N/A'}
                   </TableCell>
+<TableCell sx={tableCellStyle}>
+  {emp.isDeleted ? (
+    'Deleted'
+  ) : (
+    <Switch
+    checked={
+    emp.userId === updatingUserId
+      ? localStatuses[emp.userId]
+      : emp.isActive
+  }
+      color="success"
+    onChange={(event) => {
+  const newStatus = event.target.checked;
+
+  // Show the toggle change immediately
+  setLocalStatuses((prev) => ({
+    ...prev,
+    [emp.userId]: newStatus,
+  }));
+
+  setUpdatingUserId(emp.userId);
+
+  dispatch(
+    updateUserRequest({
+      userId: emp.userId,
+      userData: {
+        isActive: newStatus,
+      },
+    })
+  );
+}}
+    />
+  )}
+</TableCell>
                   <TableCell sx={{ ...tableCellStyle, textAlign: 'center' }}>
                     {(canUpdateEmployee || canDeleteEmployee) && !emp.isDeleted ? (
                       <>

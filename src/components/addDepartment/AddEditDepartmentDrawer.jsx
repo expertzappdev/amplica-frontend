@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
     Drawer, Box, Typography, TextField, Button, IconButton, Divider, FormControl,
-    InputLabel, Select, MenuItem, FormHelperText, Alert, CircularProgress, Avatar
+    InputLabel, Select, MenuItem, FormHelperText, Alert, CircularProgress, Avatar,
+    Autocomplete
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import BusinessIcon from '@mui/icons-material/Business';
@@ -56,7 +57,6 @@ export default function AddEditDepartmentDrawer({
     const [departmentName, setDepartmentName] = useState('');
     const [description, setDescription] = useState('');
     const [departmentHeadUserId, setDepartmentHeadUserId] = useState('');
-    const [userSearchTerm, setUserSearchTerm] = useState('');
     const [errors, setErrors] = useState({});
 
     useEffect(() => {
@@ -80,19 +80,6 @@ export default function AddEditDepartmentDrawer({
         
         let filteredUsers = [...allUsers];
         
-        if (userSearchTerm.trim()) {
-            filteredUsers = filteredUsers.filter(user => {
-                const fullName = `${user.firstName || ''} ${user.lastName || ''}`.toLowerCase();
-                const email = (user.userEmail || '').toLowerCase();
-                const employeeCode = (user.employeeCode || '').toLowerCase();
-                const searchLower = userSearchTerm.toLowerCase();
-                
-                return fullName.includes(searchLower) || 
-                       email.includes(searchLower) ||
-                       employeeCode.includes(searchLower);
-            });
-        }
-        
         return filteredUsers
             .filter(user => user.userIsActive)
             .map(user => ({
@@ -105,7 +92,7 @@ export default function AddEditDepartmentDrawer({
                 departmentName: user.departmentName,
                 roleName: user.description
             }));
-    }, [allUsers, userSearchTerm, currentUser]);
+    }, [allUsers, currentUser]);
 
     const selectedUserDetails = useMemo(() => {
         if (!departmentHeadUserId) return null;
@@ -130,7 +117,7 @@ export default function AddEditDepartmentDrawer({
                 setDepartmentHeadUserId(headUserId?.toString() || '');
                 
                 if (editingDepartment.departmentHeadName) {
-                    setUserSearchTerm('');
+                    // 
                 }
             } else {
                 setDepartmentName('');
@@ -138,7 +125,6 @@ export default function AddEditDepartmentDrawer({
                 setDepartmentHeadUserId('');
             }
             setErrors({});
-            setUserSearchTerm('');
         }
     }, [open, isEditMode, editingDepartment]);
 
@@ -335,84 +321,67 @@ export default function AddEditDepartmentDrawer({
                         inputProps={{ maxLength: 500 }}
                     />
                     
-                    <TextField
-                        label="Search Users"
-                        value={userSearchTerm}
-                        onChange={(e) => setUserSearchTerm(e.target.value)}
-                        placeholder="Search by name, email, or employee code..."
-                        fullWidth
-                        InputProps={{
-                            startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />
+                    <Autocomplete
+                        options={userOptions}
+                        getOptionLabel={(option) => option.label}
+                        value={userOptions.find(opt => opt.value?.toString() === departmentHeadUserId?.toString()) || null}
+                        onChange={(event, newValue) => {
+                            setDepartmentHeadUserId(newValue ? newValue.value : '');
+                        }}
+                        filterOptions={(options, state) => {
+                            const inputValue = state.inputValue.toLowerCase();
+                            return options.filter(option => {
+                                return (option.label || '').toLowerCase().includes(inputValue) ||
+                                       (option.email || '').toLowerCase().includes(inputValue) ||
+                                       (option.employeeCode || '').toLowerCase().includes(inputValue);
+                            });
                         }}
                         disabled={isLoading || usersLoading}
-                        helperText={`${userOptions.length} users available`}
-                    />
-                    
-                    <FormControl fullWidth error={!!errors.departmentHeadUserId}>
-                        <InputLabel id="department-head-select-label">
-                            Department Head *
-                        </InputLabel>
-                        <Select 
-                            labelId="department-head-select-label" 
-                            label="Department Head *" 
-                            value={departmentHeadUserId} 
-                            onChange={(e) => setDepartmentHeadUserId(e.target.value)}
-                            disabled={isLoading || usersLoading}
-                            MenuProps={{
-                                PaperProps: {
-                                    style: {
-                                        maxHeight: 300,
-                                    },
-                                },
-                            }}
-                        >
-                            <MenuItem value="" disabled>
-                                <em>Select Department Head</em>
-                            </MenuItem>
-                            {usersLoading ? (
-                                <MenuItem disabled>
-                                    <CircularProgress size={20} sx={{ mr: 2 }} />
-                                    Loading users...
-                                </MenuItem>
-                            ) : userOptions.length === 0 ? (
-                                <MenuItem disabled>
-                                    <em>No users found</em>
-                                </MenuItem>
-                            ) : (
-                                userOptions.map(user => (
-                                    <MenuItem key={user.value} value={user.value}>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: '100%' }}>
-                                            <Avatar sx={{ 
-                                                width: 32, 
-                                                height: 32, 
-                                                fontSize: '0.875rem',
-                                                bgcolor: user.isCurrentUser ? 'primary.main' : 'grey.400'
-                                            }}>
-                                                {getAvatarLetters(user.avatar)}
-                                            </Avatar>
-                                            <Box sx={{ flex: 1 }}>
-                                                <Typography variant="body2" sx={{ fontWeight: user.isCurrentUser ? 600 : 400 }}>
-                                                    {user.label}
-                                                    {user.isCurrentUser && ' (You)'}
-                                                </Typography>
-                                                <Typography variant="caption" color="text.secondary">
-                                                    {user.email}
-                                                    {/* {user.employeeCode && ` • ${user.employeeCode}`}
-                                                    {user.departmentName && ` • ${user.departmentName}`} */}
-                                                </Typography>
-                                            </Box>
-                                        </Box>
-                                    </MenuItem>
-                                ))
-                            )}
-                        </Select>
-                        {errors.departmentHeadUserId && (
-                            <FormHelperText>{errors.departmentHeadUserId}</FormHelperText>
+                        isOptionEqualToValue={(option, value) => option.value?.toString() === value?.value?.toString()}
+                        renderInput={(params) => (
+                            <TextField 
+                                {...params}
+                                label="Department Head *"
+                                error={!!errors.departmentHeadUserId}
+                                helperText={errors.departmentHeadUserId || (usersLoading ? 'Loading users...' : 'Select the person responsible for managing this department')}
+                                InputProps={{
+                                    ...params.InputProps,
+                                    endAdornment: (
+                                        <React.Fragment>
+                                            {usersLoading ? <CircularProgress color="inherit" size={20} /> : null}
+                                            {params.InputProps.endAdornment}
+                                        </React.Fragment>
+                                    ),
+                                }}
+                            />
                         )}
-                        <FormHelperText>
-                            {usersLoading ? 'Loading users...' : 'Select the person responsible for managing this department'}
-                        </FormHelperText>
-                    </FormControl>
+                        renderOption={(props, user) => {
+                            const { key, ...restProps } = props;
+                            return (
+                                <li key={user.value} {...restProps}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: '100%' }}>
+                                        <Avatar sx={{ 
+                                            width: 32, 
+                                            height: 32, 
+                                            fontSize: '0.875rem',
+                                            bgcolor: user.isCurrentUser ? 'primary.main' : 'grey.400'
+                                        }}>
+                                            {getAvatarLetters(user.avatar)}
+                                        </Avatar>
+                                        <Box sx={{ flex: 1 }}>
+                                            <Typography variant="body2" sx={{ fontWeight: user.isCurrentUser ? 600 : 400 }}>
+                                                {user.label}
+                                                {user.isCurrentUser && ' (You)'}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {user.email}
+                                            </Typography>
+                                        </Box>
+                                    </Box>
+                                </li>
+                            );
+                        }}
+                    />
 
                     {selectedUserDetails && (
                         <Box sx={{ 

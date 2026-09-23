@@ -73,6 +73,8 @@ export const USER_ENDPOINTS = {
   DELETE_USER: (userId) => `${API_BASE_URL}/CompanyUsers/user/${userId}`,
   UPDATE_PASSWORD: `${API_BASE_URL}/Auth/change-password`,
   UPLOAD_USER_PROFILE: (userId) => `/CompanyUsers/upload-profile-photo/${userId}`,
+  DELETE_USER_PROFILE: (userId) =>
+    `${API_BASE_URL}/CompanyUsers/profile-photo/${userId}`,
 };
 
 export const COMPANY_ENDPOINTS = {
@@ -93,7 +95,7 @@ export const COMPANY_ENDPOINTS = {
   UPDATE_DEPARTMENT: (departmentId) => `${API_BASE_URL}/Department/${departmentId}`,
   DELETE_DEPARTMENT: (departmentId) => `${API_BASE_URL}/Department/${departmentId}`,
   CHANGE_COMPANY_USER_PASSWORD: (userId) =>
-  `${API_BASE_URL}/CompanyUsers/admin/${userId}/change-password`,
+    `${API_BASE_URL}/CompanyUsers/admin/${userId}/change-password`,
 };
 
 // Report Endpoints

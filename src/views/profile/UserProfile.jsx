@@ -1,9 +1,30 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
-    Box, Grid, Paper, Typography, Avatar, List, ListItem, ListItemIcon, ListItemText,
-    TextField, Button, Select, MenuItem, FormControl, InputLabel, IconButton, Divider,
-    Tooltip, Tabs, Tab, CircularProgress, Alert, Snackbar
+    Box,
+    Grid,
+    Paper,
+    Typography,
+    Avatar,
+    List,
+    ListItem,
+    ListItemIcon,
+    ListItemText,
+    TextField,
+    Button,
+    Select,
+    MenuItem,
+    Menu,
+    FormControl,
+    InputLabel,
+    IconButton,
+    Divider,
+    Tooltip,
+    Tabs,
+    Tab,
+    CircularProgress,
+    Alert,
+    Snackbar
 } from '@mui/material';
 
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
@@ -12,6 +33,8 @@ import SchoolIcon from '@mui/icons-material/School';
 import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import PhotoCamera from '@mui/icons-material/PhotoCamera';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import EditIcon from '@mui/icons-material/Edit';
 import WcOutlinedIcon from '@mui/icons-material/WcOutlined';
 import CakeOutlinedIcon from '@mui/icons-material/CakeOutlined';
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
@@ -23,7 +46,7 @@ import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import ContactEmergencyIcon from '@mui/icons-material/ContactEmergency';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
-
+import ConfirmDeleteDialog from '../../uiComponent/deleteconfirmation/ConfirmDeleteDialog';
 import { ASSETS_BASE_URL } from '../../services/apiConstants';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -46,8 +69,10 @@ import {
     selectIsImageUploading,
     resetProfileUpdateStatus,
     resetPasswordChangeStatus,
-    clearUserProfileError
+    clearUserProfileError,
+    deleteProfileImageRequest,
 } from '../../redux/features/profile/profileSlice';
+
 import { selectCompanyDepartments } from '../../redux/features/company/companySlice';
 
 import { ROLES } from '../../utils/roles';
@@ -195,6 +220,8 @@ export default function ProfileView() {
     const [currentTab, setCurrentTab] = useState(0);
     const [showSuccessMessage, setShowSuccessMessage] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [imageMenuAnchor, setImageMenuAnchor] = useState(null);
 
     const dateToParse = (dateString) => {
         if (!dateString) return null;
@@ -337,7 +364,23 @@ export default function ProfileView() {
     const handleImageUploadClick = () => { 
         profileImageInputRef.current?.click(); 
     };
-
+    const handleDeleteImageClick = () => {
+    setIsDeleteDialogOpen(true);
+};
+const handleConfirmDeleteImage = () => {
+  dispatch(
+    deleteProfileImageRequest({
+      userId: userProfile.userId,
+      onSuccess: () => {
+        setIsDeleteDialogOpen(false);
+        setProfileImage(null);
+      },
+      onFailure: () => {
+        setIsDeleteDialogOpen(false);
+      },
+    })
+  );
+};
     const validateForm = () => {
         if (currentTab === 0) {
             const requiredFields = ['firstName', 'lastName', 'phoneNumber'];
@@ -511,6 +554,7 @@ export default function ProfileView() {
                                 firstName={profileData.firstName}
                                 lastName={profileData.lastName}
                                 size={140}
+                                onClick={handleImageUploadClick}
                             />
                             <input 
                                 type="file" 
@@ -519,28 +563,60 @@ export default function ProfileView() {
                                 onChange={handleImageChange} 
                                 style={{ display: 'none' }} 
                             />
-                            <Tooltip title="Change Profile Picture">
-                                <IconButton 
-                                    onClick={handleImageUploadClick} 
-                                    size="small" 
-                                    disabled={isImageUploading}
-                                    sx={{ 
-                                        position: 'absolute', 
-                                        bottom: 4, 
-                                        right: 4, 
-                                        backgroundColor: 'primary.main', 
-                                        color: 'primary.contrastText', 
-                                        '&:hover': { backgroundColor: 'primary.dark' }, 
-                                        boxShadow: theme.shadows[2] 
-                                    }}
-                                >
-                                    {isImageUploading ? (
-                                        <CircularProgress size={16} color="inherit" />
-                                    ) : (
-                                        <PhotoCamera fontSize="small" />
-                                    )}
-                                </IconButton>
-                            </Tooltip>
+                          <Tooltip title="Edit Profile Picture">
+    <IconButton
+        onClick={(event) => setImageMenuAnchor(event.currentTarget)}
+        size="small"
+        disabled={isImageUploading}
+        sx={{
+            position: 'absolute',
+            bottom: 4,
+            right: 4,
+            backgroundColor: 'primary.main',
+            color: 'primary.contrastText',
+            '&:hover': {
+                backgroundColor: 'primary.dark'
+            },
+            boxShadow: theme.shadows[2]
+        }}
+    >
+        {isImageUploading ? (
+            <CircularProgress size={16} color="inherit" />
+        ) : (
+            <EditIcon fontSize="small" />
+        )}
+    </IconButton>
+</Tooltip>
+<Menu
+    anchorEl={imageMenuAnchor}
+    open={Boolean(imageMenuAnchor)}
+    onClose={() => setImageMenuAnchor(null)}
+>
+    {/* Upload option - always visible */}
+    <MenuItem
+        onClick={() => {
+            setImageMenuAnchor(null);
+            handleImageUploadClick();
+        }}
+    >
+        <PhotoCamera fontSize="small" sx={{ mr: 1 }} />
+        Change / Upload
+    </MenuItem>
+
+    {/* Delete option - only when photo exists */}
+    {profileImage && (
+        <MenuItem
+            onClick={() => {
+                setImageMenuAnchor(null);
+                handleDeleteImageClick();
+            }}
+        >
+            <DeleteOutlineIcon fontSize="small" sx={{ mr: 1 }} />
+            Delete Photo
+        </MenuItem>
+    )}
+</Menu>
+               
                         </Box>
                         <Typography variant="h4" gutterBottom sx={{ fontWeight: 600 }}>
                             {profileData.firstName || ''} {profileData.lastName || ''}
@@ -1053,6 +1129,13 @@ export default function ProfileView() {
                     </Paper>
                 </Grid>
             </Grid>
+             <ConfirmDeleteDialog
+                open={isDeleteDialogOpen}
+                onClose={() => setIsDeleteDialogOpen(false)}
+                onConfirm={handleConfirmDeleteImage}
+                itemName="profile photo"
+            />
         </Box>
+
     );
 }

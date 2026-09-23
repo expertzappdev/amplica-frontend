@@ -222,7 +222,7 @@ export default function ProjectDetailView() {
                 assignedToUserName: task.assignedTo ? `${task.assignedTo.firstName || ''} ${task.assignedTo.lastName || ''}`.trim() : null,
                 projectId: projectDataFromStore.projectId,
                 name: task.title,
-            })).filter(Boolean),
+            })).filter(Boolean).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)),
         }));
 
         return {
@@ -631,7 +631,7 @@ export default function ProjectDetailView() {
         durationPreset: null,
     }), [timesheetQuery, selectedTimesheetUser]);
 
-    if (isDetailLoading || !project) {
+    if (!project) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
                 <CircularProgress />
@@ -883,11 +883,11 @@ export default function ProjectDetailView() {
                         {isTimelogLoading ? (
                             <CircularProgress />
                         ) : timelogError ? (
-                            <Box sx={{ 
-                                display: 'flex', 
-                                flexDirection: 'column', 
-                                alignItems: 'center', 
-                                justifyContent: 'center', 
+                            <Box sx={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
                                 py: 8,
                                 textAlign: 'center'
                             }}>
@@ -895,7 +895,7 @@ export default function ProjectDetailView() {
                                     Access Restricted
                                 </Typography>
                                 <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 450 }}>
-                                    You don't have the necessary permissions to view the timesheet for this project. 
+                                    You don't have the necessary permissions to view the timesheet for this project.
                                     Please contact your administrator for access.
                                 </Typography>
                             </Box>

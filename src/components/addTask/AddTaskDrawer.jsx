@@ -109,30 +109,38 @@ export default function AddTaskDrawer({
     const isDropdownLoading = useSelector(selectDropdownLoading);
     const { can } = useCan();
     const canReadAllProjects = can('project:read:all');
-    
+
     // Ref to track if we've fetched projects for the current open session
     const hasFetchedOnOpen = React.useRef(false);
 
-    const [taskName, setTaskName] = useState('');
-    const [descriptionHtml, setDescriptionHtml] = useState('');
-    const [projectId, setProjectId] = useState('');
-    const [taskListId, setTaskListId] = useState('');
+    const [formState, setFormState] = useState({
+        taskName: '',
+        descriptionHtml: '',
+        projectId: '',
+        taskListId: '',
+        assigneeIds: [],
+        statusId: '',
+        priorityId: 2,
+        startDate: null,
+        dueDate: null,
+        estimatedHours: null,
+        errors: {},
+        startDateOpen: false,
+        dueDateOpen: false,
+        estimatedHoursOpen: false
+    });
 
-    // UPDATED: Changed from single assigneeId to array assigneeIds
-    const [assigneeIds, setAssigneeIds] = useState([]);
-
-    const [statusId, setStatusId] = useState('');
-    const [priorityId, setPriorityId] = useState(2);
-    const [startDate, setStartDate] = useState(null);
-    const [dueDate, setDueDate] = useState(null);
-    const [estimatedHours, setEstimatedHours] = useState(null);
-    const [errors, setErrors] = useState({});
+    const {
+        taskName, descriptionHtml, projectId, taskListId, assigneeIds,
+        statusId, priorityId, startDate, dueDate, estimatedHours, errors,
+        startDateOpen, dueDateOpen, estimatedHoursOpen
+    } = formState;
 
     const projectOptions = useMemo(() => {
         // Handle both paginated response object and direct array
         const projects = Array.isArray(projectsResponse) ? projectsResponse : projectsResponse?.items;
         if (!Array.isArray(projects)) return [];
-        
+
         return projects.map(p => ({
             label: p.name,
             value: p.projectId,
@@ -169,18 +177,18 @@ export default function AddTaskDrawer({
     useEffect(() => {
         if (open) {
             if (!hasFetchedOnOpen.current && !isTodoMode) {
-                const fetchParams = { 
-                    page: 1, 
+                const fetchParams = {
+                    page: 1,
                     pageSize: 150,
                     statusNames: 'Active,Delayed,InProgress,InReview,Open,NotStarted,Backlog'
                 };
-                
+
                 const shouldFilterByMember = isMyTasksView || !canReadAllProjects;
 
                 if (shouldFilterByMember) {
                     fetchParams.memberUserId = currentUser?.id || currentUser?.userId;
                 }
-                
+
                 dispatch(fetchDropdownProjectsRequest(fetchParams));
                 hasFetchedOnOpen.current = true;
             }
@@ -213,14 +221,19 @@ export default function AddTaskDrawer({
             // Auto-fill tasklist: prefer "Default", fallback to first available
             if (!isEditMode && !isSubTask) {
                 const defaultList = mappedTaskLists.find(tl => tl.label.toLowerCase() === 'default');
-                setTaskListId(defaultList ? defaultList.value : (mappedTaskLists[0]?.value || ''));
-                // UPDATED: Reset to empty array instead of empty string
-                setAssigneeIds([]);
+                setFormState(prev => ({
+                    ...prev,
+                    taskListId: defaultList ? defaultList.value : (mappedTaskLists[0]?.value || ''),
+                    assigneeIds: []
+                }));
             }
         } else {
             if (!isEditMode && !isSubTask) {
-                setTaskListId('');
-                setAssigneeIds([]);
+                setFormState(prev => ({
+                    ...prev,
+                    taskListId: '',
+                    assigneeIds: []
+                }));
             }
         }
     }, [projectId, projectOptions, isEditMode, editingTask, isSubTask, isTodoMode, currentUser]);
@@ -230,84 +243,93 @@ export default function AddTaskDrawer({
     // ============================================================================
     useEffect(() => {
         if (open) {
-            if (isEditModeInternal && editingTask) {
-                // EDIT MODE: Populate form
-                setTaskName(editingTask.title || '');
-                setDescriptionHtml(editingTask.description || '');
-                setProjectId(editingTask.projectId || '');
-                setTaskListId(editingTask.taskListId || '');
+            setFormState(prev => {
+                let nextState = { ...prev, errors: {} };
 
-                // UPDATED: Extract all assignee IDs using helper function
-                const extractedIds = extractAssigneeIds(editingTask);
-                console.log('Edit Mode - Extracted Assignee IDs:', extractedIds);
-                setAssigneeIds(extractedIds);
-
-                setStartDate(editingTask.startDate ? new Date(editingTask.startDate) : null);
-                setDueDate(editingTask.endDate ? new Date(editingTask.endDate) : null);
-
-                // Convert decimal estimatedHours to HH:mm string, then to Date for TimePicker
-                const hhmmString = formatDecimalToHHMM(editingTask.estimatedHours);
-                setEstimatedHours(convertHHMMStringToDate(hhmmString));
-
-                setStatusId(findValueByLabel(statusOptions, editingTask.statusName) || '');
-                setPriorityId(findValueByLabel(priorityOptions, editingTask.priorityName) || 2);
-            } else if (isSubTask && parentTask) {
-                // SUBTASK MODE: Pre-fill from parent task
-                const openStatus = statusOptions.find(opt => opt.label === 'Open');
-                setTaskName('');
-                setDescriptionHtml('');
-                setProjectId(parentTask.projectId || '');
-                setTaskListId(parentTask.taskListId || '');
-
-                // UPDATED: Inherit parent's assignees
-                const parentAssigneeIds = extractAssigneeIds(parentTask);
-                console.log('SubTask Mode - Parent Assignee IDs:', parentAssigneeIds);
-                setAssigneeIds(parentAssigneeIds);
-
-                setStartDate(null);
-                setDueDate(null);
-                setEstimatedHours(null);
-                setStatusId(openStatus ? openStatus.value : (statusOptions[0]?.value || ''));
-                setPriorityId(2);
-            } else if (isTodoMode) {
-                // TODO MODE: Reset form specifically for Todo
-                const openStatus = statusOptions.find(opt => opt.label === 'Open');
-                setTaskName('');
-                setDescriptionHtml('');
-                setProjectId(''); // No project
-                setTaskListId(''); // No task list
-                setAssigneeIds([currentUser.id]); // Default to current user
-                setStartDate(null);
-                setDueDate(null);
-                setEstimatedHours(null);
-                setStatusId(openStatus ? openStatus.value : (statusOptions[0]?.value || ''));
-                setPriorityId(2);
-            } else {
-                // ADD MODE: Initialize from props if provided
-                if (projectIdForNewTask) {
-                    // Ensure projectId is a number if possible, or matches the type in projectOptions
-                    const prefilledId = isNaN(Number(projectIdForNewTask)) ? projectIdForNewTask : Number(projectIdForNewTask);
-                    setProjectId(prefilledId);
+                if (isEditModeInternal && editingTask) {
+                    // EDIT MODE: Populate form
+                    const extractedIds = extractAssigneeIds(editingTask);
+                    console.log('Edit Mode - Extracted Assignee IDs:', extractedIds);
                     
-                    if (taskListIdForNewTask) {
-                        setTaskListId(taskListIdForNewTask);
-                    }
+                    const hhmmString = formatDecimalToHHMM(editingTask.estimatedHours);
+
+                    nextState = {
+                        ...nextState,
+                        taskName: editingTask.title || '',
+                        descriptionHtml: editingTask.description || '',
+                        projectId: editingTask.projectId || '',
+                        taskListId: editingTask.taskListId || '',
+                        assigneeIds: extractedIds,
+                        startDate: editingTask.startDate ? new Date(editingTask.startDate) : null,
+                        dueDate: editingTask.endDate ? new Date(editingTask.endDate) : null,
+                        estimatedHours: convertHHMMStringToDate(hhmmString),
+                        statusId: findValueByLabel(statusOptions, editingTask.statusName) || '',
+                        priorityId: findValueByLabel(priorityOptions, editingTask.priorityName) || 2
+                    };
+                } else if (isSubTask && parentTask) {
+                    // SUBTASK MODE: Pre-fill from parent task
+                    const openStatus = statusOptions.find(opt => opt.label === 'Open');
+                    const parentAssigneeIds = extractAssigneeIds(parentTask);
+                    console.log('SubTask Mode - Parent Assignee IDs:', parentAssigneeIds);
+
+                    nextState = {
+                        ...nextState,
+                        taskName: '',
+                        descriptionHtml: '',
+                        projectId: parentTask.projectId || '',
+                        taskListId: parentTask.taskListId || '',
+                        assigneeIds: parentAssigneeIds,
+                        startDate: null,
+                        dueDate: null,
+                        estimatedHours: null,
+                        statusId: openStatus ? openStatus.value : (statusOptions[0]?.value || ''),
+                        priorityId: 2
+                    };
+                } else if (isTodoMode) {
+                    // TODO MODE: Reset form specifically for Todo
+                    const openStatus = statusOptions.find(opt => opt.label === 'Open');
+                    nextState = {
+                        ...nextState,
+                        taskName: '',
+                        descriptionHtml: '',
+                        projectId: '',
+                        taskListId: '',
+                        assigneeIds: [currentUser.id],
+                        startDate: null,
+                        dueDate: null,
+                        estimatedHours: null,
+                        statusId: openStatus ? openStatus.value : (statusOptions[0]?.value || ''),
+                        priorityId: 2
+                    };
                 } else {
-                    setProjectId('');
-                    setTaskListId('');
+                    // ADD MODE: Initialize from props if provided
+                    let initialProjectId = '';
+                    let initialTaskListId = '';
+
+                    if (projectIdForNewTask) {
+                        initialProjectId = isNaN(Number(projectIdForNewTask)) ? projectIdForNewTask : Number(projectIdForNewTask);
+                        if (taskListIdForNewTask) {
+                            initialTaskListId = taskListIdForNewTask;
+                        }
+                    }
+
+                    const openStatus = statusOptions.find(opt => opt.label === 'Open');
+                    nextState = {
+                        ...nextState,
+                        taskName: '',
+                        descriptionHtml: '',
+                        projectId: initialProjectId,
+                        taskListId: initialTaskListId,
+                        assigneeIds: [],
+                        startDate: null,
+                        dueDate: null,
+                        estimatedHours: null,
+                        statusId: openStatus ? openStatus.value : (statusOptions[0]?.value || ''),
+                        priorityId: 2
+                    };
                 }
-                
-                const openStatus = statusOptions.find(opt => opt.label === 'Open');
-                setTaskName('');
-                setDescriptionHtml('');
-                setAssigneeIds([]);
-                setStartDate(null);
-                setDueDate(null);
-                setEstimatedHours(null);
-                setStatusId(openStatus ? openStatus.value : (statusOptions[0]?.value || ''));
-                setPriorityId(2);
-            }
-            setErrors({});
+                return nextState;
+            });
         }
     }, [open, isEditModeInternal, editingTask, isSubTask, parentTask, projectIdForNewTask, taskListIdForNewTask, statusOptions, isTodoMode, currentUser?.id]);
 
@@ -323,7 +345,7 @@ export default function AddTaskDrawer({
             newErrors.assigneeIds = 'At least one assignee is required';
         }
 
-        setErrors(newErrors);
+        setFormState(prev => ({ ...prev, errors: newErrors }));
         return Object.keys(newErrors).length === 0;
     };
 
@@ -395,7 +417,7 @@ export default function AddTaskDrawer({
                     <TextField
                         label={isSubTask ? "Sub-task Name" : "Task Name"}
                         value={taskName}
-                        onChange={(e) => setTaskName(e.target.value)}
+                        onChange={(e) => setFormState(prev => ({ ...prev, taskName: e.target.value }))}
                         required
                         fullWidth
                         error={!!errors.taskName}
@@ -410,7 +432,7 @@ export default function AddTaskDrawer({
                                 labelId="project-select-label"
                                 label="Project *"
                                 value={projectId}
-                                onChange={(e) => setProjectId(e.target.value)}
+                                onChange={(e) => setFormState(prev => ({ ...prev, projectId: e.target.value }))}
                                 disabled={isSubTask}
                             >
                                 {projectOptions.map(opt => <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>)}
@@ -430,7 +452,7 @@ export default function AddTaskDrawer({
                                 labelId="tasklist-select-label"
                                 label="Task List *"
                                 value={taskListId}
-                                onChange={(e) => setTaskListId(e.target.value)}
+                                onChange={(e) => setFormState(prev => ({ ...prev, taskListId: e.target.value }))}
                             >
                                 {taskListOptions.map(opt => <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>)}
                             </Select>
@@ -445,7 +467,7 @@ export default function AddTaskDrawer({
                     <TiptapEditorField
                         label="Description"
                         initialContent={descriptionHtml}
-                        onContentChange={setDescriptionHtml}
+                        onContentChange={(val) => setFormState(prev => ({ ...prev, descriptionHtml: val }))}
                         minEditorHeight="120px"
                     />
 
@@ -461,8 +483,11 @@ export default function AddTaskDrawer({
                                 multiple
                                 value={assigneeIds}
                                 onChange={(e) => {
-                                    setAssigneeIds(e.target.value);
-                                    setErrors(prev => ({ ...prev, assigneeIds: null }));
+                                    setFormState(prev => ({
+                                        ...prev,
+                                        assigneeIds: e.target.value,
+                                        ...(prev.errors.assigneeIds && { errors: { ...prev.errors, assigneeIds: null } })
+                                    }));
                                 }}
                                 renderValue={(selected) => (
                                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
@@ -512,11 +537,14 @@ export default function AddTaskDrawer({
                     {/* Date Pickers */}
                     <LocalizationProvider dateAdapter={AdapterDateFns}>
                         <DatePicker
-                            label="Start Date"
+                            label="Start Date *"
                             value={startDate}
-                            onChange={setStartDate}
+                            onChange={(val) => setFormState(prev => ({ ...prev, startDate: val }))}
                             format="dd/MM/yyyy"
                             required
+                            open={startDateOpen}
+                            onOpen={() => setFormState(prev => ({ ...prev, startDateOpen: true }))}
+                            onClose={() => setFormState(prev => ({ ...prev, startDateOpen: false }))}
                             enableAccessibleFieldDOMStructure={false}
                             slots={{
                                 textField: (params) => (
@@ -526,17 +554,21 @@ export default function AddTaskDrawer({
                                         error={!!errors.startDate}
                                         helperText={errors.startDate}
                                         placeholder="DD/MM/YYYY"
+                                        onClick={() => setFormState(prev => ({ ...prev, startDateOpen: true }))}
                                     />
                                 )
                             }}
                         />
                         <DatePicker
-                            label="Due Date"
+                            label="Due Date *"
                             value={dueDate}
-                            onChange={setDueDate}
+                            onChange={(val) => setFormState(prev => ({ ...prev, dueDate: val }))}
                             minDate={startDate}
                             format="dd/MM/yyyy"
                             required
+                            open={dueDateOpen}
+                            onOpen={() => setFormState(prev => ({ ...prev, dueDateOpen: true }))}
+                            onClose={() => setFormState(prev => ({ ...prev, dueDateOpen: false }))}
                             enableAccessibleFieldDOMStructure={false}
                             slots={{
                                 textField: (params) => (
@@ -546,6 +578,7 @@ export default function AddTaskDrawer({
                                         error={!!errors.dueDate}
                                         helperText={errors.dueDate}
                                         placeholder="DD/MM/YYYY"
+                                        onClick={() => setFormState(prev => ({ ...prev, dueDateOpen: true }))}
                                     />
                                 )
                             }}
@@ -553,11 +586,23 @@ export default function AddTaskDrawer({
                         <TimePicker
                             label="Estimated Hours (HH:mm)"
                             value={estimatedHours}
-                            onChange={(newValue) => setEstimatedHours(newValue)}
+                            onChange={(newValue) => setFormState(prev => ({ ...prev, estimatedHours: newValue }))}
                             ampm={false}
                             views={['hours', 'minutes']}
                             format="HH:mm"
-                            renderInput={(params) => <TextField {...params} fullWidth />}
+                            open={estimatedHoursOpen}
+                            onOpen={() => setFormState(prev => ({ ...prev, estimatedHoursOpen: true }))}
+                            onClose={() => setFormState(prev => ({ ...prev, estimatedHoursOpen: false }))}
+                            enableAccessibleFieldDOMStructure={false}
+                            slots={{
+                                textField: (params) => (
+                                    <TextField
+                                        {...params}
+                                        fullWidth
+                                        onClick={() => setFormState(prev => ({ ...prev, estimatedHoursOpen: true }))}
+                                    />
+                                )
+                            }}
                         />
                     </LocalizationProvider>
 
@@ -569,7 +614,7 @@ export default function AddTaskDrawer({
                                 labelId="status-label"
                                 label="Status"
                                 value={statusId}
-                                onChange={(e) => setStatusId(e.target.value)}
+                                onChange={(e) => setFormState(prev => ({ ...prev, statusId: e.target.value }))}
                             >
                                 {statusOptions.map(opt => <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>)}
                             </Select>
@@ -580,7 +625,7 @@ export default function AddTaskDrawer({
                                 labelId="priority-label"
                                 label="Priority"
                                 value={priorityId}
-                                onChange={(e) => setPriorityId(e.target.value)}
+                                onChange={(e) => setFormState(prev => ({ ...prev, priorityId: e.target.value }))}
                             >
                                 {priorityOptions.map(opt => <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>)}
                             </Select>

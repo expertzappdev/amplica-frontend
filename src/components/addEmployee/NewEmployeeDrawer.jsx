@@ -15,7 +15,9 @@ import {
   Paper,
   CircularProgress,
   FormHelperText,
-  Alert
+  Alert,
+  FormControlLabel,
+  Switch,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -177,7 +179,8 @@ export default function NewEmployeeDrawer({ open, onClose, onSubmit, employeeToE
       departmentId: formData.departmentId,
       companyRoleId: formData.roleId,
       description: selectedRole?.roleName || '',
-      companyId: userCompanyId
+      companyId: userCompanyId,  
+      isActive: formData.status === 'Active'
     };
 
     const normalizedReportToUserId =
@@ -425,8 +428,29 @@ export default function NewEmployeeDrawer({ open, onClose, onSubmit, employeeToE
                     textField: (params) => <TextField {...params} fullWidth required variant="outlined" placeholder="DD/MM/YYYY" />
                   }}
                 />
+                
               </LocalizationProvider>
-            </Grid>
+              </Grid>
+          <Grid item size={{ xs: 12 }}>
+  <Box sx={{ mt: 1 }}>
+    <FormControlLabel
+      control={
+        <Switch
+          checked={formData.status === 'Active'}
+          onChange={(e) =>
+            setFormData((prev) => ({
+              ...prev,
+              status: e.target.checked ? 'Active' : 'Inactive'
+            }))
+          }
+          color="success"
+          disabled={isLoading}
+        />
+      }
+      label="Active"
+    />
+  </Box>
+</Grid>
           </Grid>
         </Box>
 

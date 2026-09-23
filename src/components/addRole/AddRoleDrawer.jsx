@@ -8,6 +8,8 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import SecurityIcon from '@mui/icons-material/Security';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { selectUserCompanyId } from '../../redux/features/auth/authSlice';
 import {
     fetchPermissionsRequest,
@@ -24,7 +26,7 @@ const PERMISSION_ORDER = [
     { key: 'delete', label: 'Delete' },
     { key: 'read:department', label: 'Department' },
     { key: 'read:all', label: 'Read All' },
-    {key: 'read:company', label: 'Read Company'}
+    { key: 'read:company', label: 'Read Company' }
 ];
 
 export default function AddRoleDrawer({
@@ -42,10 +44,16 @@ export default function AddRoleDrawer({
     const permissionsLoading = useSelector(selectPermissionsLoading);
     const permissionsError = useSelector(selectPermissionsError);
 
-    const [roleName, setRoleName] = useState('');
-    const [isActive, setIsActive] = useState(true);
-    const [selectedPermissions, setSelectedPermissions] = useState([]);
-    const [errors, setErrors] = useState({});
+    const [formState, setFormState] = useState({
+        roleName: '',
+        isActive: true,
+        selectedPermissions: [],
+        errors: {},
+        expandedModule: null,
+        hasAutoOpened: false
+    });
+
+    const { roleName, isActive, selectedPermissions, errors, expandedModule, hasAutoOpened } = formState;
 
     useEffect(() => {
         if (open && (!permissionsData.items || permissionsData.items.length === 0)) {
@@ -84,7 +92,7 @@ export default function AddRoleDrawer({
             }
 
             if (!resource || !action) return;
-            
+
             // Hide company:read:all, create, delete
             if (resource.toLowerCase() === 'company') {
                 const actionLower = action.toLowerCase();
@@ -148,9 +156,6 @@ export default function AddRoleDrawer({
     useEffect(() => {
         if (open) {
             if (isEditMode && editingRole) {
-                setRoleName(editingRole.roleName || '');
-                setIsActive(editingRole.isActive !== false);
-
                 let permissions = [];
                 try {
                     if (editingRole.defaultPermission) {
@@ -162,15 +167,35 @@ export default function AddRoleDrawer({
                     console.error('Error parsing permissions:', e);
                     permissions = [];
                 }
-                setSelectedPermissions(permissions);
+                
+                setFormState(prev => ({
+                    ...prev,
+                    roleName: editingRole.roleName || '',
+                    isActive: editingRole.isActive !== false,
+                    selectedPermissions: permissions,
+                    errors: {}
+                }));
             } else {
-                setRoleName('');
-                setIsActive(true);
-                setSelectedPermissions([]);
+                setFormState(prev => ({
+                    ...prev,
+                    roleName: '',
+                    isActive: true,
+                    selectedPermissions: [],
+                    errors: {}
+                }));
             }
-            setErrors({});
+            // expandedModule and hasAutoOpened reset is handled in the other useEffect
         }
     }, [open, isEditMode, editingRole]);
+
+    useEffect(() => {
+        if (open && modules.length > 0 && !hasAutoOpened) {
+            setFormState(prev => ({ ...prev, expandedModule: modules[0].moduleId, hasAutoOpened: true }));
+        }
+        if (!open) {
+            setFormState(prev => ({ ...prev, hasAutoOpened: false, expandedModule: null }));
+        }
+    }, [open, modules, hasAutoOpened]);
 
     const validateForm = () => {
         const newErrors = {};
@@ -187,7 +212,7 @@ export default function AddRoleDrawer({
             newErrors.companyId = 'Company ID is required';
         }
 
-        setErrors(newErrors);
+        setFormState(prev => ({ ...prev, errors: newErrors }));
         return Object.keys(newErrors).length === 0;
     };
 
@@ -236,16 +261,17 @@ export default function AddRoleDrawer({
     };
 
     const togglePermission = (permissionName) => {
-        setSelectedPermissions(prev => {
-            if (prev.includes(permissionName)) {
-                return prev.filter(p => p !== permissionName);
-            } else {
-                return [...prev, permissionName];
-            }
+        setFormState(prev => {
+            const newPermissions = prev.selectedPermissions.includes(permissionName)
+                ? prev.selectedPermissions.filter(p => p !== permissionName)
+                : [...prev.selectedPermissions, permissionName];
+
+            return {
+                ...prev,
+                selectedPermissions: newPermissions,
+                ...(prev.errors.permissions && { errors: { ...prev.errors, permissions: null } })
+            };
         });
-        if (errors.permissions) {
-            setErrors(prev => ({ ...prev, permissions: null }));
-        }
     };
 
     const isResourceFullySelected = (moduleId, resource) => {
@@ -265,25 +291,30 @@ export default function AddRoleDrawer({
         const isFullySelected = isResourceFullySelected(moduleId, resource);
 
         if (isFullySelected) {
-            const resourcePermissions = resource.permissions.map(p => p.permissionName);
-            setSelectedPermissions(prev =>
-                prev.filter(p => !resourcePermissions.includes(p))
-            );
+            setFormState(prev => {
+                const resourcePermissions = resource.permissions.map(p => p.permissionName);
+                const newPermissions = prev.selectedPermissions.filter(p => !resourcePermissions.includes(p));
+                return {
+                    ...prev,
+                    selectedPermissions: newPermissions,
+                    ...(prev.errors.permissions && { errors: { ...prev.errors, permissions: null } })
+                };
+            });
         } else {
-            const resourcePermissions = resource.permissions.map(p => p.permissionName);
-            setSelectedPermissions(prev => {
-                const newPermissions = [...prev];
+            setFormState(prev => {
+                const resourcePermissions = resource.permissions.map(p => p.permissionName);
+                const newPermissions = [...prev.selectedPermissions];
                 resourcePermissions.forEach(permission => {
                     if (!newPermissions.includes(permission)) {
                         newPermissions.push(permission);
                     }
                 });
-                return newPermissions;
+                return {
+                    ...prev,
+                    selectedPermissions: newPermissions,
+                    ...(prev.errors.permissions && { errors: { ...prev.errors, permissions: null } })
+                };
             });
-        }
-
-        if (errors.permissions) {
-            setErrors(prev => ({ ...prev, permissions: null }));
         }
     };
 
@@ -327,29 +358,30 @@ export default function AddRoleDrawer({
         );
 
         if (allHaveThisPermission) {
-            const permissionsToRemove = allPermissionsWithThisType.map(permission =>
-                permission.permissionName
-            );
-            setSelectedPermissions(prev =>
-                prev.filter(p => !permissionsToRemove.includes(p))
-            );
+            setFormState(prev => {
+                const permissionsToRemove = allPermissionsWithThisType.map(p => p.permissionName);
+                const newPermissions = prev.selectedPermissions.filter(p => !permissionsToRemove.includes(p));
+                return {
+                    ...prev,
+                    selectedPermissions: newPermissions,
+                    ...(prev.errors.permissions && { errors: { ...prev.errors, permissions: null } })
+                };
+            });
         } else {
-            const permissionsToAdd = allPermissionsWithThisType.map(permission =>
-                permission.permissionName
-            );
-            setSelectedPermissions(prev => {
-                const newPermissions = [...prev];
+            setFormState(prev => {
+                const permissionsToAdd = allPermissionsWithThisType.map(p => p.permissionName);
+                const newPermissions = [...prev.selectedPermissions];
                 permissionsToAdd.forEach(permission => {
                     if (!newPermissions.includes(permission)) {
                         newPermissions.push(permission);
                     }
                 });
-                return newPermissions;
+                return {
+                    ...prev,
+                    selectedPermissions: newPermissions,
+                    ...(prev.errors.permissions && { errors: { ...prev.errors, permissions: null } })
+                };
             });
-        }
-
-        if (errors.permissions) {
-            setErrors(prev => ({ ...prev, permissions: null }));
         }
     };
 
@@ -363,10 +395,13 @@ export default function AddRoleDrawer({
     };
 
     const handleClose = () => {
-        setRoleName('');
-        setIsActive(true);
-        setSelectedPermissions([]);
-        setErrors({});
+        setFormState(prev => ({
+            ...prev,
+            roleName: '',
+            isActive: true,
+            selectedPermissions: [],
+            errors: {}
+        }));
         onClose();
     };
 
@@ -462,10 +497,12 @@ export default function AddRoleDrawer({
                                 label="Role Name"
                                 value={roleName}
                                 onChange={(e) => {
-                                    setRoleName(e.target.value);
-                                    if (errors.roleName) {
-                                        setErrors(prev => ({ ...prev, roleName: null }));
-                                    }
+                                    const value = e.target.value;
+                                    setFormState(prev => ({
+                                        ...prev,
+                                        roleName: value,
+                                        ...(prev.errors.roleName ? { errors: { ...prev.errors, roleName: null } } : {})
+                                    }));
                                 }}
                                 required
                                 fullWidth
@@ -479,7 +516,7 @@ export default function AddRoleDrawer({
                                 control={
                                     <Switch
                                         checked={isActive}
-                                        onChange={(e) => setIsActive(e.target.checked)}
+                                        onChange={(e) => setFormState(prev => ({ ...prev, isActive: e.target.checked }))}
                                         color="success"
                                     />
                                 }
@@ -556,15 +593,23 @@ export default function AddRoleDrawer({
                                             {modules.map((module) => (
                                                 <React.Fragment key={module.moduleId}>
                                                     {/* Module Header */}
-                                                    <TableRow sx={{ backgroundColor: 'action.hover' }}>
+                                                    <TableRow
+                                                        sx={{ backgroundColor: 'action.hover', cursor: 'pointer' }}
+                                                        onClick={() => setFormState(prev => ({ ...prev, expandedModule: prev.expandedModule === module.moduleId ? null : module.moduleId }))}
+                                                    >
                                                         <TableCell colSpan={orderedPermissionTypes.length + 2} sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}>
-                                                            <Typography variant="subtitle2" color="primary">
-                                                                {module.moduleName}
-                                                            </Typography>
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                                <Typography variant="subtitle2" color="primary">
+                                                                    {module.moduleName}
+                                                                </Typography>
+                                                                <IconButton size="small" sx={{ p: 0.5 }}>
+                                                                    {expandedModule === module.moduleId ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+                                                                </IconButton>
+                                                            </Box>
                                                         </TableCell>
                                                     </TableRow>
                                                     {/* Resources */}
-                                                    {module.resources.map((resource) => (
+                                                    {expandedModule === module.moduleId && module.resources.map((resource) => (
                                                         <TableRow key={`${module.moduleId}-${resource.resourceName}`} hover>
                                                             <TableCell sx={{ fontWeight: 500, pl: 4 }}>
                                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

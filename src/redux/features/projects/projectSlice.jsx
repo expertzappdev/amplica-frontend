@@ -46,8 +46,9 @@ const projectSlice = createSlice({
     getProjectByIdRequest: (state) => {
       state.isLoading = true;
       state.error = null;
-      state.projectIdData = null;
-      state.editingProjectData = null;
+      // Intentionally not clearing state.projectIdData or state.editingProjectData here 
+      // to prevent the UI from flickering/showing a spinner during background data refreshes.
+      // Cleanup is handled correctly by clearEditingState on unmount.
     },
     getProjectByIdSuccess: (state, action) => {
       state.isLoading = false;

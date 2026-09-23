@@ -26,14 +26,20 @@ export default function UserChangePassword({ open, onClose, userId }) {
     const error = useSelector(selectUserProfileError);
     const success = useSelector(selectIsPasswordChanged);
 
-    const [newPassword, setNewPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [validationError, setValidationError] = useState('');
+    const [formState, setFormState] = useState({
+        newPassword: '',
+        confirmPassword: '',
+        validationError: ''
+    });
+
+    const { newPassword, confirmPassword, validationError } = formState;
 
     const handleClose = () => {
-        setNewPassword('');
-        setConfirmPassword('');
-        setValidationError('');
+        setFormState({
+            newPassword: '',
+            confirmPassword: '',
+            validationError: ''
+        });
 
         dispatch(resetPasswordChangeStatus());
         onClose();
@@ -41,28 +47,28 @@ export default function UserChangePassword({ open, onClose, userId }) {
 
     const handleSubmit = () => {
         if (!newPassword || !confirmPassword) {
-            setValidationError('Both password fields are required.');
+            setFormState(prev => ({ ...prev, validationError: 'Both password fields are required.' }));
             return;
         }
 
         if (newPassword.length < 6) {
-            setValidationError(
-                'Password must be at least 6 characters long.'
-            );
+            setFormState(prev => ({ ...prev, validationError: 'Password must be at least 6 characters long.' }));
             return;
         }
 
         if (newPassword !== confirmPassword) {
-            setValidationError('Passwords do not match.');
+            setFormState(prev => ({ ...prev, validationError: 'Passwords do not match.' }));
             return;
         }
 
         if (!userId) {
-            setValidationError('Admin user ID is missing.');
+            setFormState(prev => ({ ...prev, validationError: 'Admin user ID is missing.' }));
             return;
         }
 
-        setValidationError('');
+        if (validationError) {
+            setFormState(prev => ({ ...prev, validationError: '' }));
+        }
 
         dispatch(
             changeUserPasswordRequest({
@@ -77,9 +83,11 @@ export default function UserChangePassword({ open, onClose, userId }) {
 
     useEffect(() => {
         if (success) {
-            setNewPassword('');
-            setConfirmPassword('');
-            setValidationError('');
+            setFormState({
+                newPassword: '',
+                confirmPassword: '',
+                validationError: ''
+            });
 
             onClose();
 
@@ -108,8 +116,8 @@ export default function UserChangePassword({ open, onClose, userId }) {
                         size="small"
                         value={newPassword}
                         onChange={(event) => {
-                            setNewPassword(event.target.value);
-                            setValidationError('');
+                            const val = event.target.value;
+                            setFormState(prev => ({ ...prev, newPassword: val, validationError: '' }));
                         }}
                         error={Boolean(validationError)}
                     />
@@ -121,8 +129,8 @@ export default function UserChangePassword({ open, onClose, userId }) {
                         size="small"
                         value={confirmPassword}
                         onChange={(event) => {
-                            setConfirmPassword(event.target.value);
-                            setValidationError('');
+                            const val = event.target.value;
+                            setFormState(prev => ({ ...prev, confirmPassword: val, validationError: '' }));
                         }}
                         error={Boolean(validationError)}
                     />

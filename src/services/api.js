@@ -336,6 +336,11 @@ export const UserAPI = {
       },
     });
   },
+  deleteProfileImage: (userId) => {
+  return apiClient.delete(
+    USER_ENDPOINTS.DELETE_USER_PROFILE(userId)
+  );
+},
   changeUserPassword: async (userId, passwordData) => {
     const response = await apiClient.put(USER_ENDPOINTS.CHANGE_USER_PASSWORD(userId), passwordData);
     return response.data;

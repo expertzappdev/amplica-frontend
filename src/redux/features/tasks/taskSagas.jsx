@@ -61,7 +61,9 @@ function* handleFetchTasksForProject({ payload: projectId }) {
 
 function* handleFetchUserTasks({ payload }) {
   try {
-    const response = yield call(TaskAPI.getAllTasksForUser, payload);
+    const currentQuery = yield select(selectTasksQuery);
+    const apiPayload = (!payload || Object.keys(payload).length === 0) ? currentQuery : payload;
+    const response = yield call(TaskAPI.getAllTasksForUser, apiPayload);
 
     if (response.data && response.data.statusCode === 200) {
       yield put(fetchTasksSuccess(response.data.data));
@@ -75,7 +77,9 @@ function* handleFetchUserTasks({ payload }) {
 
 function* handleFetchAllTasks({ payload }) {
   try {
-    const response = yield call(TaskAPI.getCompanyTasks, payload);
+    const currentQuery = yield select(selectTasksQuery);
+    const apiPayload = (!payload || Object.keys(payload).length === 0) ? currentQuery : payload;
+    const response = yield call(TaskAPI.getCompanyTasks, apiPayload);
 
     if (response.data && response.data.statusCode === 200) {
       yield put(fetchTasksSuccess(response.data.data));

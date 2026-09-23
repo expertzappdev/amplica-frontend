@@ -18,12 +18,14 @@ const initialState = {
     departmentNames: '',
     memberUserId: null,
     isDeletedFilter: false,
+    isActiveFilter: true,
   },
   loading: false,
   error: null,
   isProfileUpdated: false,
   isPasswordChanged: false,
   isImageUploading: false,
+  isImageDeleting: false,
   itemToDelete: null,
 };
 
@@ -93,6 +95,23 @@ const userProfileSlice = createSlice({
       state.isImageUploading = false;
       // state.error = action.payload;
     },
+    deleteProfileImageRequest: (state) => {
+  state.isImageDeleting = true;
+  state.error = null;
+},
+
+deleteProfileImageSuccess: (state) => {
+  state.isImageDeleting = false;
+
+  if (state.userProfileDetail) {
+    state.userProfileDetail.profilePhotoUrl = null;
+  }
+},
+
+deleteProfileImageFailure: (state, action) => {
+  state.isImageDeleting = false;
+  state.error = action.payload;
+},
 
     setUsersQuery: (state, action) => {
       const isFilterChange = Object.keys(action.payload).some(key => key !== 'page' && state.query[key] !== action.payload[key]);
@@ -159,6 +178,9 @@ export const {
   clearUserProfileError,
   resetProfileUpdateStatus,
   resetPasswordChangeStatus,
+  deleteProfileImageRequest,
+deleteProfileImageSuccess,
+deleteProfileImageFailure,
 } = userProfileSlice.actions;
 
 export const selectUserList = (state) => state.userProfile.userList;
@@ -170,5 +192,6 @@ export const selectEmployeeProfile = (state) => state.userProfile.employeeProfil
 export const selectIsProfileUpdated = (state) => state.userProfile.isProfileUpdated;
 export const selectIsPasswordChanged = (state) => state.userProfile.isPasswordChanged;
 export const selectIsImageUploading = (state) => state.userProfile.isImageUploading;
+export const selectIsImageDeleting = (state) => state.userProfile.isImageDeleting;
 
 export default userProfileSlice.reducer;

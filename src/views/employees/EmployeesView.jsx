@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Box, Typography, Button, IconButton, CircularProgress, Tooltip } from '@mui/material';
+import { Box, Typography, Button, IconButton, CircularProgress, Tooltip, Chip } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import CloseIcon from '@mui/icons-material/Close';
 import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 
@@ -50,6 +51,7 @@ export default function EmployeesView() {
     departmentNames: '',
     memberUserId: null,
     isDeletedFilter: false,
+    isActiveFilter: true,
   };
   
   const loading = useSelector(selectUserProfileLoading);
@@ -130,14 +132,15 @@ export default function EmployeesView() {
         title: 'Search by Keyword',
       },
       {
-        type: 'isDeletedFilter',
-        key: 'isDeletedFilter',
-        title: 'User Status',
-        options: [
-          { key: false, label: 'Active Users' },
-          { key: true, label: 'Deleted Users' },
-        ],
-      },
+  type: 'userStatus',
+  key: 'userStatus',
+  title: 'User Status',
+  options: [
+    { key: 'active', label: 'Active Users' },
+    { key: 'inactive', label: 'Inactive Users' },
+    { key: 'deleted', label: 'Deleted Users' },
+  ],
+},
     ];
   }, [companyDepartments, companyRoles]);
 
@@ -154,7 +157,8 @@ export default function EmployeesView() {
       roleNames: parseCommaSeparatedField(query.roleNames),
       search: query.search || '',
       memberUserId: query.memberUserId || null,
-      isDeletedFilter: query.isDeletedFilter ?? false,
+      isDeletedFilter: query.isDeletedFilter,
+      isActiveFilter: query.isActiveFilter,
     };
   }, [query]);
 
@@ -173,20 +177,27 @@ export default function EmployeesView() {
         departmentNames: '',
         memberUserId: null,
         isDeletedFilter: false,
+        isActiveFilter: true,
         page: 1,
         pageSize: 50,
       };
     } else {
       const updatedFilters = { ...filtersPayload };
       
+      const managedKeys = ['departmentNames', 'roleNames', 'search', 'sortBy', 'sortOrder', 'statusNames'];
+      managedKeys.forEach(key => {
+        if (!(key in updatedFilters)) {
+          updatedFilters[key] = '';
+        }
+      });
+
+      if (!('isActiveFilter' in updatedFilters)) updatedFilters.isActiveFilter = null;
+      if (!('isDeletedFilter' in updatedFilters)) updatedFilters.isDeletedFilter = false;
+
       // Handle array to comma-separated string conversion for all multi-select fields
       ['statusNames', 'departmentNames', 'roleNames'].forEach(field => {
         if (Array.isArray(updatedFilters[field])) {
-          if (updatedFilters[field].length > 0) {
-            updatedFilters[field] = updatedFilters[field].join(',');
-          } else {
-            updatedFilters[field] = '';
-          }
+          updatedFilters[field] = updatedFilters[field].join(',');
         }
       });
       
@@ -196,6 +207,97 @@ export default function EmployeesView() {
     dispatch(setUsersQuery(newQueryState));
     toggleFilterDrawer(false);
   }, [dispatch, query]);
+
+  const handleRemoveFilter = useCallback((filterKey) => {
+    let newQuery = { ...query, page: 1 };
+    if (filterKey === 'search') {
+      newQuery.search = '';
+    } else if (filterKey === 'sortBy') {
+      newQuery.sortBy = '';
+      newQuery.sortOrder = '';
+    } else {
+      newQuery[filterKey] = '';
+    }
+    dispatch(setUsersQuery(newQuery));
+  }, [dispatch, query]);
+
+  const handleClearAllFilters = useCallback(() => {
+    dispatch(setUsersQuery({
+      ...query,
+      sortBy: '',
+      sortOrder: '',
+      statusNames: '',
+      search: '',
+      roleNames: '',
+      departmentNames: '',
+      memberUserId: null,
+      isDeletedFilter: false,
+      isActiveFilter: true,
+      page: 1,
+    }));
+  }, [dispatch, query]);
+
+  const renderActiveFilters = () => {
+    const chips = [];
+    const deptNames = query.departmentNames ? (typeof query.departmentNames === 'string' ? query.departmentNames.split(',').filter(Boolean) : query.departmentNames) : [];
+    const roleNames = query.roleNames ? (typeof query.roleNames === 'string' ? query.roleNames.split(',').filter(Boolean) : query.roleNames) : [];
+    const hasSortBy = query.sortBy;
+
+    deptNames.forEach(dept => {
+      chips.push({
+        key: `dept_${dept}`, label: `Department: ${dept}`, onDelete: () => {
+          const remaining = deptNames.filter(d => d !== dept);
+          dispatch(setUsersQuery({ ...query, departmentNames: remaining.join(','), page: 1 }));
+        }
+      });
+    });
+
+    roleNames.forEach(role => {
+      chips.push({
+        key: `role_${role}`, label: `Role: ${role}`, onDelete: () => {
+          const remaining = roleNames.filter(r => r !== role);
+          dispatch(setUsersQuery({ ...query, roleNames: remaining.join(','), page: 1 }));
+        }
+      });
+    });
+
+    if (hasSortBy) {
+      const sortLabel = { firstName: 'Name', joiningDate: 'Joining Date', userEmail: 'Email', departmentName: 'Department' }[query.sortBy] || query.sortBy;
+      chips.push({ key: 'sortBy', label: `Sort: ${sortLabel} (${query.sortOrder || 'asc'})`, onDelete: () => handleRemoveFilter('sortBy') });
+    }
+
+    if (chips.length === 0) return null;
+
+    return (
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 0.75, mr: 1.5 }}>
+        {chips.map(chip => (
+          <Chip
+            key={chip.key}
+            label={chip.label}
+            size="small"
+            onDelete={chip.onDelete}
+            deleteIcon={<CloseIcon />}
+            sx={{
+              backgroundColor: 'primary.50',
+              color: 'primary.main',
+              border: '1px solid',
+              borderColor: 'primary.200',
+              fontWeight: 500,
+              fontSize: '0.75rem',
+              '& .MuiChip-deleteIcon': { color: 'primary.main', fontSize: '0.9rem' }
+            }}
+          />
+        ))}
+        <Button
+          size="small"
+          onClick={handleClearAllFilters}
+          sx={{ color: 'text.secondary', fontSize: '0.75rem', textTransform: 'none', minWidth: 0, px: 0.5 }}
+        >
+          Clear all
+        </Button>
+      </Box>
+    );
+  };
 
   const handleEditClick = (userId) => {
     const employeeRow = formattedEmployees.find((emp) => emp.userId === userId);
@@ -250,19 +352,21 @@ export default function EmployeesView() {
       .map((user, index) => ({
         userId: user.userId,
         serialNumber: (query.page - 1) * query.pageSize + index + 1,
-        id: user.employeeCode || `EMP-${String(index + 1).padStart(3, '0')}`,
+        id: user.employeeCode || `EMP-${user.userId}`,
         firstName: user.firstName,
         lastName: user.lastName,
         avatarUrl: user.profilePhotoUrl,
         email: user.userEmail,
-        department: user.departmentName || 'N/A',
-        role: user.description || 'N/A',
+        department: user.departmentName,
+        role: user.description,
         joiningDate: user.joiningDate,
-        status: user.userIsActive ? 'Active' : 'Inactive',
-        isDeleted: query.isDeletedFilter,
-        originalData: user
+
+        isActive: user.isActive,
+        isDeleted: user.isDeleted,
+
+  originalData: user
       }));
-  }, [employees, query.page, query.pageSize, query.isDeletedFilter]);
+  }, [employees, query.page, query.pageSize]);
 
   return (
     <Box sx={{ width: '100%', boxSizing: 'border-box' }}>
@@ -295,10 +399,17 @@ export default function EmployeesView() {
               boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
             }}
           >
-            {query.isDeletedFilter ? 'Deleted Members' : 'Active Members'}
+            {
+      query.isDeletedFilter
+    ? 'Deleted Members'
+    : query.isActiveFilter
+      ? 'Active Members'
+      : 'Inactive Members'
+}
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          {renderActiveFilters()}
           <Tooltip title={canCreateEmployee ? '' : "You don't have permission to add employee"}>
             <span>
               <Button

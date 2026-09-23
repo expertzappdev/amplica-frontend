@@ -7,10 +7,15 @@ import ErrorBoundary from '../../uiComponent/errorboundary/ErrorBoundary';
 // --- UI Imports ---
 import {
     Box, Grid, Paper, Typography, Avatar, List, ListItem, ListItemIcon, ListItemText,
-    Divider, Tabs, Tab, Chip, Button, CircularProgress
+    Divider, Tabs, Tab, Chip, Button, CircularProgress,
+    TextField, Select, MenuItem, FormControl, InputLabel
 } from '@mui/material';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import WorkOutlineOutlinedIcon from '@mui/icons-material/WorkOutlineOutlined';
+import EditIcon from '@mui/icons-material/Edit';
 import SchoolIcon from '@mui/icons-material/School';
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined';
@@ -29,6 +34,8 @@ import { format, parseISO, isValid, differenceInYears } from 'date-fns';
 import { gridSpacing } from '../../store/constant';
 import { useTheme } from '@mui/material/styles';
 import UserChangePassword from './UserChangePassword';
+import toast from 'react-hot-toast';
+import { validateEmailStrict } from '../../utils/emailValidation';
 
 // --- Redux Imports ---
 import {
@@ -37,8 +44,16 @@ import {
     selectUserProfile,
     selectUserProfileLoading,
     selectUserProfileError,
-    clearUserProfileError
+    clearUserProfileError,
+    updateUserRequest
 } from '../../redux/features/profile/profileSlice';
+
+import {
+    getCompanyRolesRequest,
+    getCompanyDepartmentsRequest,
+    selectCompanyRoles,
+    selectCompanyDepartments
+} from '../../redux/features/company/companySlice';
 
 // --- Static Data ---
 const countryOptions = [
@@ -129,17 +144,72 @@ const ViewProfileAvatar = ({ src, firstName, lastName, size = 140, ...props }) =
 };
 
 // Helper Components
-const InfoDisplayItem = ({ label, value, icon, fullWidth = false, sx }) => (
-    <Grid item xs={12} md={fullWidth ? 12 : 6} lg={fullWidth ? 12 : 4} sx={{ mb: 2.5, ...sx }}>
-        <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5, fontSize: '0.75rem', lineHeight: 1.2 }}>
-            {label}
-        </Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            {icon && React.cloneElement(icon, { sx: { mr: 1, fontSize: '1.2rem', color: 'text.secondary', opacity: 0.8 } })}
-            <Typography variant="body1" fontWeight="500" sx={{ wordBreak: 'break-word' }}>
-                {value || '-'}
-            </Typography>
-        </Box>
+const InfoDisplayItem = ({ label, value, icon, fullWidth = false, sx, isEditing, name, type = 'text', options, onChange, error, ...props }) => (
+    <Grid item size={{ xs: 12, md: fullWidth ? 12 : 6, lg: fullWidth ? 12 : 4 }} sx={{ mb: 2.5, ...sx }}>
+        {!isEditing ? (
+            <>
+                <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5, fontSize: '0.75rem', lineHeight: 1.2 }}>
+                    {label}
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    {icon && React.cloneElement(icon, { sx: { mr: 1, fontSize: '1.2rem', color: 'text.secondary', opacity: 0.8 } })}
+                    <Typography variant="body1" fontWeight="500" sx={{ wordBreak: 'break-word' }}>
+                        {value || '-'}
+                    </Typography>
+                </Box>
+            </>
+        ) : (
+            <Box sx={{ mt: 1 }}>
+                {type === 'text' || type === 'email' ? (
+                    <TextField
+                        fullWidth
+                        size="small"
+                        label={label}
+                        name={name}
+                        value={value || ''}
+                        onChange={onChange}
+                        error={!!error}
+                        helperText={error}
+                        type={type}
+                        {...props}
+                    />
+                ) : type === 'select' ? (
+                    <FormControl fullWidth size="small" error={!!error}>
+                        <InputLabel>{label}</InputLabel>
+                        <Select
+                            label={label}
+                            name={name}
+                            value={value || ''}
+                            onChange={onChange}
+                            {...props}
+                        >
+                            {options?.map(opt => (
+                                <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                            ))}
+                        </Select>
+                        {error && <Typography variant="caption" color="error">{error}</Typography>}
+                    </FormControl>
+                ) : type === 'date' ? (
+                    <LocalizationProvider dateAdapter={AdapterDateFns}>
+                        <DatePicker
+                            label={label}
+                            value={value ? new Date(value) : null}
+                            onChange={(newValue) => onChange({ target: { name, value: newValue } })}
+                            format="dd/MM/yyyy"
+                            slotProps={{
+                                textField: {
+                                    size: "small",
+                                    fullWidth: true,
+                                    error: !!error,
+                                    helperText: error
+                                }
+                            }}
+                            {...props}
+                        />
+                    </LocalizationProvider>
+                ) : null}
+            </Box>
+        )}
     </Grid>
 );
 
@@ -184,10 +254,17 @@ export default function ViewProfileView({ profileData: passedProfileData }) {
 
     const [profileData, setProfileData] = useState(placeholderData || passedProfileData || null);
     const [currentTab, setCurrentTab] = useState(0);
- const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+    const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editData, setEditData] = useState(null);
+    const [errors, setErrors] = useState({});
+    
     const userDetail = useSelector(selectUserProfile);
     const isLoading = useSelector(selectUserProfileLoading);
     const error = useSelector(selectUserProfileError);
+
+    const companyRoles = useSelector(selectCompanyRoles);
+    const companyDepartments = useSelector(selectCompanyDepartments);
 
     const dateToParse = (dateString) => {
         if (!dateString) return null;
@@ -198,8 +275,9 @@ export default function ViewProfileView({ profileData: passedProfileData }) {
     useEffect(() => {
         if (userId) {
             dispatch(clearUserProfileError());
-            // dispatch(getUserProfileRequest({ userId: userId }));
             dispatch(getEmployeeProfileRequest({ userId: userId }));
+            dispatch(getCompanyRolesRequest());
+            dispatch(getCompanyDepartmentsRequest());
         }
     }, [userId, dispatch]);
 
@@ -272,6 +350,88 @@ export default function ViewProfileView({ profileData: passedProfileData }) {
             dispatch(clearUserProfileError());
             // dispatch(getUserProfileRequest({ userId: userId }));
             dispatch(getEmployeeProfileRequest({ userId: userId }));
+        }
+    };
+
+    const handleCancel = () => {
+        setIsEditing(false);
+        setEditData(null);
+        setErrors({});
+    };
+
+    const handleEditClick = () => {
+        setIsEditing(true);
+        setEditData({ ...profileData });
+        setErrors({});
+    };
+
+    const handleFieldChange = (event) => {
+        const { name, value } = event.target;
+        setEditData(prev => ({ ...prev, [name]: value }));
+        if (errors[name]) {
+            setErrors(prev => ({ ...prev, [name]: null }));
+        }
+    };
+
+    const handleSave = () => {
+        // Validation
+        const newErrors = {};
+        if (!editData.firstName?.trim()) newErrors.firstName = 'First Name is required';
+        if (!editData.lastName?.trim()) newErrors.lastName = 'Last Name is required';
+        if (!editData.email?.trim()) newErrors.email = 'Email is required';
+        else {
+            const emailValidation = validateEmailStrict(editData.email.trim());
+            if (!emailValidation.isValid) newErrors.email = emailValidation.message;
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            return;
+        }
+
+        if (userDetail) {
+            const payload = {
+                firstName: editData.firstName,
+                lastName: editData.lastName,
+                userEmail: editData.email,
+                phoneNumber: editData.phoneNumber,
+                gender: editData.gender,
+                dateOfBirth: editData.dob ? format(new Date(editData.dob), 'yyyy-MM-dd') : null,
+                bloodGroup: editData.bloodGroup,
+                maritalStatus: editData.maritalStatus,
+                anniversaryDate: editData.anniversaryDate ? format(new Date(editData.anniversaryDate), 'yyyy-MM-dd') : null,
+                country: editData.nationality,
+                address: editData.streetAddress1,
+                addressLine1: editData.streetAddress2,
+                city: editData.city,
+                state: editData.state,
+                postalCode: editData.postalCode,
+                emergencyContactName: editData.emergencyContactName,
+                emergencyContactRelation: editData.emergencyContactRelation,
+                emergencyContactNumber: editData.emergencyContactPhone,
+                departmentId: editData.departmentId,
+                roleId: editData.roleId,
+                joiningDate: editData.joiningDate ? format(new Date(editData.joiningDate), 'yyyy-MM-dd') : null,
+                isActive: editData.status === 'Active',
+                employmentType: editData.typeOfHire,
+                reportToUserId: editData.reportToUserId ? Number(editData.reportToUserId) : null,
+            };
+
+            dispatch(
+                updateUserRequest({
+                    userId: userDetail.userId,
+                    userData: payload,
+                    onSuccess: () => {
+                        setIsEditing(false);
+                        setEditData(null);
+                        dispatch(getEmployeeProfileRequest({ userId: userId }));
+                        toast.success('Member updated successfully');
+                    },
+                    onFailure: (err) => {
+                        toast.error(`Update failed: ${err}`);
+                    },
+                })
+            );
         }
     };
 
@@ -381,6 +541,8 @@ export default function ViewProfileView({ profileData: passedProfileData }) {
         return 'N/A';
     };
 
+    const currentData = isEditing ? editData : profileData;
+
     return (
         <Box sx={{
             width: '100%',
@@ -486,16 +648,50 @@ export default function ViewProfileView({ profileData: passedProfileData }) {
                                 <Tab label="Personal Information" id="view-profile-tab-0" aria-controls="view-profile-tabpanel-0" />
                                 <Tab label="Job Information" id="view-profile-tab-1" aria-controls="view-profile-tabpanel-1" />
                             </Tabs>
-                            <Box sx={{ p: 2 }}>
-                                <Button 
-                                    variant="outlined" 
-                                    size="small" 
-                                    onClick={() => setIsChangePasswordOpen(true)}
-                                    sx={{ borderRadius: '6px', textTransform: 'none' }}
-                                >
-                                    Change Password
-                                </Button>
-                                </Box>
+                            <Box sx={{ p: 2, display: 'flex', gap: 1 }}>
+                                {!isEditing ? (
+                                    <>
+                                        <Button 
+                                            variant="outlined" 
+                                            size="small" 
+                                            onClick={() => setIsChangePasswordOpen(true)}
+                                            sx={{ borderRadius: '6px', textTransform: 'none' }}
+                                        >
+                                            Change Password
+                                        </Button>
+                                        <Button 
+                                            variant="contained" 
+                                            color="primary"
+                                            size="small"
+                                            startIcon={<EditIcon />}
+                                            onClick={handleEditClick}
+                                            sx={{ borderRadius: '6px', textTransform: 'none' }}
+                                        >
+                                            Edit Member
+                                        </Button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Button 
+                                            variant="outlined" 
+                                            size="small" 
+                                            onClick={handleCancel}
+                                            sx={{ borderRadius: '6px', textTransform: 'none' }}
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <Button 
+                                            variant="contained" 
+                                            color="primary"
+                                            size="small"
+                                            onClick={handleSave}
+                                            sx={{ borderRadius: '6px', textTransform: 'none' }}
+                                        >
+                                            Save Changes
+                                        </Button>
+                                    </>
+                                )}
+                            </Box>
                         </Box>
 
                         {/* Tab Content */}
@@ -503,98 +699,183 @@ export default function ViewProfileView({ profileData: passedProfileData }) {
                             {/* Personal Information Tab */}
                             <TabPanel value={currentTab} index={0}>
                                 <ViewSectionCard title="Basic Details" icon={<PersonOutlineIcon />}>
-                                    <InfoDisplayItem
-                                        label="Full Name"
-                                        value={`${profileData?.firstName || ''} ${profileData?.lastName || ''}`.trim()}
-                                    />
+                                    {!isEditing ? (
+                                        <InfoDisplayItem
+                                            label="Full Name"
+                                            value={`${currentData?.firstName || ''} ${currentData?.lastName || ''}`.trim()}
+                                        />
+                                    ) : (
+                                        <>
+                                            <InfoDisplayItem
+                                                label="First Name"
+                                                name="firstName"
+                                                value={currentData?.firstName}
+                                                isEditing={isEditing}
+                                                onChange={handleFieldChange}
+                                                error={errors.firstName}
+                                            />
+                                            <InfoDisplayItem
+                                                label="Last Name"
+                                                name="lastName"
+                                                value={currentData?.lastName}
+                                                isEditing={isEditing}
+                                                onChange={handleFieldChange}
+                                                error={errors.lastName}
+                                            />
+                                        </>
+                                    )}
                                     <InfoDisplayItem
                                         label="Gender"
-                                        value={profileData?.gender}
+                                        name="gender"
+                                        type="select"
+                                        options={[{label: 'Male', value: 'Male'}, {label: 'Female', value: 'Female'}, {label: 'Other', value: 'Other'}]}
+                                        value={currentData?.gender}
+                                        isEditing={isEditing}
+                                        onChange={handleFieldChange}
                                     />
                                     <InfoDisplayItem
                                         label="Date of Birth"
-                                        value={formatDate(profileData?.dob)}
+                                        name="dob"
+                                        type="date"
+                                        value={isEditing ? currentData?.dob : formatDate(currentData?.dob)}
+                                        isEditing={isEditing}
+                                        onChange={handleFieldChange}
                                     />
-                                    <InfoDisplayItem
-                                        label="Age"
-                                        value={age ? `${age} years` : 'N/A'}
-                                    />
+                                    {!isEditing && (
+                                        <InfoDisplayItem
+                                            label="Age"
+                                            value={age ? `${age} years` : 'N/A'}
+                                        />
+                                    )}
                                     <InfoDisplayItem
                                         label="Blood Group"
-                                        value={profileData?.bloodGroup}
+                                        name="bloodGroup"
+                                        type="select"
+                                        options={['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(bg => ({label: bg, value: bg}))}
+                                        value={currentData?.bloodGroup}
+                                        isEditing={isEditing}
+                                        onChange={handleFieldChange}
                                     />
                                     <InfoDisplayItem
                                         label="Marital Status"
-                                        value={profileData?.maritalStatus}
+                                        name="maritalStatus"
+                                        type="select"
+                                        options={maritalStatusOptions.map(ms => ({label: ms, value: ms}))}
+                                        value={currentData?.maritalStatus}
+                                        isEditing={isEditing}
+                                        onChange={handleFieldChange}
                                     />
                                     <InfoDisplayItem
                                         label="Anniversary Date"
-                                        value={formatDate(profileData?.anniversaryDate)}
+                                        name="anniversaryDate"
+                                        type="date"
+                                        value={isEditing ? currentData?.anniversaryDate : formatDate(currentData?.anniversaryDate)}
+                                        isEditing={isEditing}
+                                        onChange={handleFieldChange}
                                     />
                                     <InfoDisplayItem
                                         label="Nationality"
-                                        value={countryOptions.find(c =>
-                                            c.label === profileData?.nationality || c.code === profileData?.nationality
-                                        )?.label || profileData?.nationality || 'N/A'}
+                                        name="nationality"
+                                        type={isEditing ? "select" : "text"}
+                                        options={countryOptions.map(c => ({label: c.label, value: c.code}))}
+                                        value={isEditing ? currentData?.nationality : (countryOptions.find(c => c.label === currentData?.nationality || c.code === currentData?.nationality)?.label || currentData?.nationality || 'N/A')}
+                                        isEditing={isEditing}
+                                        onChange={handleFieldChange}
                                     />
                                 </ViewSectionCard>
 
                                 <ViewSectionCard title="Contact Details" icon={<EmailOutlinedIcon />}>
                                     <InfoDisplayItem
                                         label="Email Address"
-                                        value={profileData?.email}
+                                        name="email"
+                                        type="email"
+                                        value={currentData?.email}
+                                        isEditing={isEditing}
+                                        onChange={handleFieldChange}
+                                        error={errors.email}
                                     />
                                     <InfoDisplayItem
                                         label="Phone Number"
-                                        value={`${profileData?.phoneCountryCode || ''} ${profileData?.phoneNumber || ''}`.trim()}
+                                        name="phoneNumber"
+                                        value={currentData?.phoneNumber}
+                                        isEditing={isEditing}
+                                        onChange={handleFieldChange}
+                                        error={errors.phoneNumber}
                                     />
                                 </ViewSectionCard>
 
                                 <ViewSectionCard title="Address Information" icon={<HomeOutlinedIcon />}>
                                     <InfoDisplayItem
                                         label="Address Line 1"
-                                        value={profileData?.streetAddress1}
+                                        name="streetAddress1"
+                                        value={currentData?.streetAddress1}
+                                        isEditing={isEditing}
+                                        onChange={handleFieldChange}
                                         fullWidth
                                     />
-                                    {profileData?.streetAddress2 && (
+                                    {(currentData?.streetAddress2 || isEditing) && (
                                         <InfoDisplayItem
                                             label="Address Line 2"
-                                            value={profileData?.streetAddress2}
+                                            name="streetAddress2"
+                                            value={currentData?.streetAddress2}
+                                            isEditing={isEditing}
+                                            onChange={handleFieldChange}
                                             fullWidth
                                         />
                                     )}
                                     <InfoDisplayItem
                                         label="City"
-                                        value={profileData?.city}
+                                        name="city"
+                                        value={currentData?.city}
+                                        isEditing={isEditing}
+                                        onChange={handleFieldChange}
                                     />
                                     <InfoDisplayItem
                                         label="State"
-                                        value={profileData?.state}
+                                        name="state"
+                                        value={currentData?.state}
+                                        isEditing={isEditing}
+                                        onChange={handleFieldChange}
                                     />
                                     <InfoDisplayItem
                                         label="Postal Code"
-                                        value={profileData?.postalCode}
+                                        name="postalCode"
+                                        value={currentData?.postalCode}
+                                        isEditing={isEditing}
+                                        onChange={handleFieldChange}
                                     />
                                     <InfoDisplayItem
                                         label="Country"
-                                        value={countryOptions.find(c =>
-                                            c.label === profileData?.country || c.code === profileData?.country
-                                        )?.label || profileData?.country || 'N/A'}
+                                        name="country"
+                                        type={isEditing ? "select" : "text"}
+                                        options={countryOptions.map(c => ({label: c.label, value: c.code}))}
+                                        value={isEditing ? currentData?.country : (countryOptions.find(c => c.label === currentData?.country || c.code === currentData?.country)?.label || currentData?.country || 'N/A')}
+                                        isEditing={isEditing}
+                                        onChange={handleFieldChange}
                                     />
                                 </ViewSectionCard>
 
                                 <ViewSectionCard title="Emergency Contact" icon={<ContactEmergencyIcon />}>
                                     <InfoDisplayItem
                                         label="Contact Name"
-                                        value={profileData?.emergencyContactName}
+                                        name="emergencyContactName"
+                                        value={currentData?.emergencyContactName}
+                                        isEditing={isEditing}
+                                        onChange={handleFieldChange}
                                     />
                                     <InfoDisplayItem
                                         label="Relation"
-                                        value={profileData?.emergencyContactRelation}
+                                        name="emergencyContactRelation"
+                                        value={currentData?.emergencyContactRelation}
+                                        isEditing={isEditing}
+                                        onChange={handleFieldChange}
                                     />
                                     <InfoDisplayItem
                                         label="Phone Number"
-                                        value={profileData?.emergencyContactPhone}
+                                        name="emergencyContactPhone"
+                                        value={currentData?.emergencyContactPhone}
+                                        isEditing={isEditing}
+                                        onChange={handleFieldChange}
                                     />
                                 </ViewSectionCard>
                             </TabPanel>
@@ -604,36 +885,66 @@ export default function ViewProfileView({ profileData: passedProfileData }) {
                                 <ViewSectionCard title="Employment Details" icon={<BusinessCenterIcon />}>
                                     <InfoDisplayItem
                                         label="ID"
-                                        value={profileData?.userId}
+                                        value={currentData?.userId}
                                     />
                                     <InfoDisplayItem
                                         label="Role"
-                                        value={profileData?.role}
+                                        name="roleId"
+                                        type={isEditing ? "select" : "text"}
+                                        options={companyRoles?.map(r => ({label: r.roleName, value: r.companyRoleId}))}
+                                        value={isEditing ? currentData?.roleId : currentData?.role}
+                                        isEditing={isEditing}
+                                        onChange={handleFieldChange}
                                     />
                                     <InfoDisplayItem
                                         label="Department"
-                                        value={profileData?.department}
+                                        name="departmentId"
+                                        type={isEditing ? "select" : "text"}
+                                        options={companyDepartments?.map(d => ({label: d.departmentName, value: d.deptId}))}
+                                        value={isEditing ? currentData?.departmentId : currentData?.department}
+                                        isEditing={isEditing}
+                                        onChange={handleFieldChange}
                                     />
                                     <InfoDisplayItem
                                         label="Employment Type"
-                                        value={profileData?.typeOfHire}
+                                        name="typeOfHire"
+                                        type={isEditing ? "select" : "text"}
+                                        options={employmentTypeOptions.map(t => ({label: t, value: t}))}
+                                        value={currentData?.typeOfHire}
+                                        isEditing={isEditing}
+                                        onChange={handleFieldChange}
                                     />
                                     <InfoDisplayItem
                                         label="Joining Date"
-                                        value={formatDate(profileData?.joiningDate)}
+                                        name="joiningDate"
+                                        type="date"
+                                        value={isEditing ? currentData?.joiningDate : formatDate(currentData?.joiningDate)}
+                                        isEditing={isEditing}
+                                        onChange={handleFieldChange}
                                     />
                                     <InfoDisplayItem
                                         label="Employment Status"
-                                        value={profileData?.status}
+                                        name="status"
+                                        type={isEditing ? "select" : "text"}
+                                        options={[{label: 'Active', value: 'Active'}, {label: 'Inactive', value: 'Inactive'}]}
+                                        value={currentData?.status}
+                                        isEditing={isEditing}
+                                        onChange={handleFieldChange}
                                     />
                                     <InfoDisplayItem
                                         label="Office Location"
-                                        value={profileData?.officeLocation}
-                                        icon={<LocationOnOutlinedIcon />}
+                                        name="officeLocation"
+                                        value={currentData?.officeLocation}
+                                        icon={!isEditing ? <LocationOnOutlinedIcon /> : null}
+                                        isEditing={isEditing}
+                                        onChange={handleFieldChange}
                                     />
                                     <InfoDisplayItem
-                                        label="Reports To"
-                                        value={profileData?.reportToUserId ? `User ID: ${profileData.reportToUserId}` : 'N/A'}
+                                        label="Reports To (User ID)"
+                                        name="reportToUserId"
+                                        value={currentData?.reportToUserId}
+                                        isEditing={isEditing}
+                                        onChange={handleFieldChange}
                                     />
                                 </ViewSectionCard>
 
@@ -660,7 +971,7 @@ export default function ViewProfileView({ profileData: passedProfileData }) {
                     </Paper>
                 </Grid>
             </Grid>
-              <UserChangePassword
+            <UserChangePassword
                 open={isChangePasswordOpen}
                 onClose={() => setIsChangePasswordOpen(false)}
                 userId={userId}
