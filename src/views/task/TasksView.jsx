@@ -292,6 +292,12 @@ export default function TasksView() {
   }, [detailsError, dispatch]);
 
   useEffect(() => {
+    if (query?.pageSize < 10) {
+      dispatch(setTasksQuery({ ...query, pageSize: 10 }));
+    }
+  }, [query?.pageSize, dispatch]);
+
+  useEffect(() => {
     if (isAuthenticated && !tasksLoading && !hasFetchedInitial) {
       dispatch(fetchUserTasksRequest(query));
       setHasFetchedInitial(true);
@@ -428,6 +434,7 @@ export default function TasksView() {
         type: 'statusNames',
         key: 'statusNames',
         title: 'Filter by Status',
+        allLabel: 'All Tasks',
         options: statusOptions,
       },
       {

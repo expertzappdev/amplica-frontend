@@ -49,7 +49,7 @@ export default function ProjectsView() {
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const query = useSelector(selectQuery) || {
     page: 1,
-    pageSize: 5,
+    pageSize: 10,
     sortBy: '',
     sortOrder: '',
     statusNames: '',
@@ -118,6 +118,12 @@ export default function ProjectsView() {
     }
   }, [query, dispatch, isAuthenticated, hasFetchedInitial]);
 
+
+  useEffect(() => {
+    if (query?.pageSize < 10) {
+      dispatch(setQuery({ ...query, pageSize: 10 }));
+    }
+  }, [query?.pageSize, dispatch]);
 
   const toggleProjectFormDrawer = (open) => () => {
     setIsProjectFormDrawerOpen(open);
@@ -245,6 +251,7 @@ export default function ProjectsView() {
         type: 'statusNames',
         key: 'statusNames',
         title: 'Filter by Status',
+        allLabel: 'All Projects',
         options: statusOptions,
       },
       {

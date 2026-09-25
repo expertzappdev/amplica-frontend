@@ -151,12 +151,6 @@ export default function AdvancedSortDrawer({
       payload.loggedAtTo = getFormattedTime(payload.loggedAtTo);
     }
 
-    Object.keys(payload).forEach(key => {
-      if (payload[key] === null || payload[key] === '' || (Array.isArray(payload[key]) && payload[key].length === 0)) {
-        delete payload[key];
-      }
-    });
-
     delete payload.durationPreset;
     onConfirm(payload);
     onClose();
@@ -200,7 +194,7 @@ export default function AdvancedSortDrawer({
     return (
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
         <Chip
-          label="All Tasks"
+          label={section.allLabel || "All"}
           onClick={() => handleSelectionChange('statusNames', [])}
           variant={isAllSelected ? 'filled' : 'outlined'}
           color={isAllSelected ? 'primary' : 'default'}

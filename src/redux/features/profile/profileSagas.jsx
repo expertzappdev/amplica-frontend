@@ -127,10 +127,17 @@ function* handleUpdateUser(action) {
     const response = yield call(UserAPI.updateUser, userId, userData);
     const updatedUser = response.data?.data || response.data;
     yield put(updateUserSuccess(updatedUser));
-    const message = userData.isActive
-  ? 'Team member is now active. You can find them under Active Users.'
-  : 'Team member is now inactive. You can find them under Inactive Users.';
-  toast.success(message, { variant: 'success' });
+    const isFormData = userData instanceof FormData;
+    const isStatusToggle = !isFormData && Object.keys(userData).length === 1 && 'isActive' in userData;
+
+    let message = 'Profile updated successfully.';
+    if (isStatusToggle) {
+      message = userData.isActive
+        ? 'Team member is now active. You can find them under Active Users.'
+        : 'Team member is now inactive. You can find them under Inactive Users.';
+    }
+
+    toast.success(message, { variant: 'success' });
 
   // Give the user a moment to see the status change
 yield delay(2000);

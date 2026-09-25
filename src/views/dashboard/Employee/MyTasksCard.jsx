@@ -39,35 +39,6 @@ const MyTasksCard = ({ tasks, isLoading, error }) => {
     { label: 'High', value: 3 },
   ];
 
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h5" component="div" sx={{ fontWeight: 600 }}>
-              My Tasks
-            </Typography>
-          </Box>
-          <Typography>Loading tasks...</Typography>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card>
-        <CardContent>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h5" component="div" sx={{ fontWeight: 600 }}>
-              My Tasks
-            </Typography>
-          </Box>
-          <Alert severity="error">Failed to load tasks: {error}</Alert>
-        </CardContent>
-      </Card>
-    );
-  }
 
   const getStatusColor = (status) => {
     const statusMap = {
@@ -239,7 +210,15 @@ const MyTasksCard = ({ tasks, isLoading, error }) => {
           </Box>
 
           <List sx={{ minHeight: 280, overflow: 'auto' }}>
-            {displayTasks.length > 0 ? (
+            {isLoading ? (
+              <ListItem>
+                <ListItemText primary={<Typography color="text.secondary" align="center">Loading tasks...</Typography>} />
+              </ListItem>
+            ) : error ? (
+              <ListItem>
+                <Alert severity="error" sx={{ width: '100%' }}>Failed to load tasks: {error}</Alert>
+              </ListItem>
+            ) : displayTasks.length > 0 ? (
               displayTasks.map((task, index) => {
                 const taskStatus = getTaskStatus(task);
 

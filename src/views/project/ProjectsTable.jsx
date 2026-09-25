@@ -319,7 +319,7 @@ export default function ProjectsTable({
         </Table>
       </TableContainer>
       <TablePagination
-        rowsPerPageOptions={[5, 10, 15, 25]}
+        rowsPerPageOptions={[10, 25, 50, 100]}
         component="div"
         count={pagination.totalCount}
         rowsPerPage={pagination.pageSize}

@@ -6,6 +6,7 @@ const initialState = {
     totalCount: 0,
   },
   isLoading: false,
+  isDetailsLoading: false,
   error: null,
   detailsError: null,
   currentTaskId: null,
@@ -16,7 +17,7 @@ const initialState = {
   currentTaskListId: null,
   query: {
     page: 1,
-    pageSize: 5,
+    pageSize: 10,
     sortBy: '',
     sortOrder: '',
     statusNames: '',
@@ -49,11 +50,11 @@ const taskSlice = createSlice({
     },
     getTaskByIdSuccess: (state, action) => {
       state.taskData = action.payload;
-      state.isLoading = false;
+      state.isDetailsLoading = false;
       state.detailsError = null;
     },
     getTaskByIdFailure: (state, action) => {
-      state.isLoading = false;
+      state.isDetailsLoading = false;
       state.detailsError = action.payload;
     },
     createTaskSuccess: (state, action) => {
@@ -118,10 +119,10 @@ const taskSlice = createSlice({
     fetchTasksForProjectRequest: (state) => { state.isLoading = true; state.error = null; },
     fetchUserTasksRequest: (state) => { state.isLoading = true; state.error = null; },
     fetchAllTasksRequest: (state) => { state.isLoading = true; state.error = null; },
-    getTaskByIdRequest: (state) => { state.isLoading = true; state.detailsError = null; state.taskData = null; },
+    getTaskByIdRequest: (state) => { state.isDetailsLoading = true; state.detailsError = null; state.taskData = null; },
     createTaskRequest: (state) => { state.isLoading = true; state.error = null; },
     createSubTaskRequest: (state) => { state.isLoading = true; state.error = null; },
-    updateTaskRequest: (state) => { state.isLoading = true; state.error = null; },
+    updateTaskRequest: (state) => { state.error = null; },
     deleteTaskRequest: (state) => { state.isLoading = true; state.error = null; },
 
     // New reducers to track project context
@@ -184,6 +185,7 @@ export const {
 
 export const selectAllTasks = (state) => state.tasks.tasks;
 export const selectTasksLoading = (state) => state.tasks.isLoading;
+export const selectTasksDetailsLoading = (state) => state.tasks.isDetailsLoading;
 export const selectTasksError = (state) => state.tasks.error;
 export const selectCurrentTaskId = (state) => state.tasks.currentTaskId;
 export const selectTaskData = (state) => state.tasks.taskData;
